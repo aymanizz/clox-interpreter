@@ -5,7 +5,7 @@
 # NAME         Name of the output executable (and object file directory).
 # SOURCE_DIR   Directory where source files and headers are found.
 
-CFLAGS := -std=c99 -Wall -Wextra -Werror -Wno-unused-parameter
+CFLAGS := -std=c99 -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unused-function
 SOURCE_DIR := ./src
 NAME := clox
 

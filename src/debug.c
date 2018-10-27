@@ -27,6 +27,12 @@ int disassembleOp(Chunk *chunk, int offset) {
 	switch (op) {
 		case OP_CONSTANT:
 			return constantOp("OP_CONSTANT", chunk, offset);
+		case OP_NIL:
+			return simpleOp("OP_NIL", offset);
+		case OP_TRUE:
+			return simpleOp("OP_TRUE", offset);
+		case OP_FALSE:
+			return simpleOp("OP_FALSE", offset);
 		case OP_NEGATE:
 			return simpleOp("OP_NEGATE", offset);
 		case OP_RETURN:

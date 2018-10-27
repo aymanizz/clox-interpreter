@@ -48,11 +48,11 @@ static InterpretResult run() {
 				push(constant);
 				break;
 			}
-			case OP_NEGATE:	push(-pop()); break;
-			case OP_ADD:	BINARY_OP(+); break;
-			case OP_SUB:	BINARY_OP(-); break;
-			case OP_MUL:	BINARY_OP(*); break;
-			case OP_DIV:	BINARY_OP(/); break;
+			case OP_NEGATE: push(-pop()); break;
+			case OP_ADD:    BINARY_OP(+); break;
+			case OP_SUB:    BINARY_OP(-); break;
+			case OP_MUL:    BINARY_OP(*); break;
+			case OP_DIV:    BINARY_OP(/); break;
 			case OP_RETURN: {
 				printValue(pop());
 				printf("\n");

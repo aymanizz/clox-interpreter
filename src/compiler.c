@@ -251,7 +251,7 @@ bool compile(const char *source, Chunk *chunk) {
 
 	advance();
 	expression();
-	consume(TOKEN_EOF, "expected end of expression.");
+	consume(TOKEN_EOF, "expected end of expression");
 	endCompiler();
 	return !parser.had_error;
 }

@@ -130,9 +130,7 @@ static void endCompiler() {
 	#endif
 }
 
-static void expression();
 static ParseRule *getRule(TokenType type);
-static void parsePrecedence(Precedence precedence);
 
 static void parsePrecedence(Precedence precedence) {
 	advance();
@@ -157,7 +155,7 @@ static void expression() {
 
 static void number() {
 	double value = strtod(parser.previous.start, NULL);
-	emitConstant(value);
+	emitConstant(NUMBER_VAL(value));
 }
 
 static void binary() {

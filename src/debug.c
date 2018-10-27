@@ -45,6 +45,12 @@ int disassembleOp(Chunk *chunk, int offset) {
 			return simpleOp("OP_MUL", offset);
 		case OP_DIV:
 			return simpleOp("OP_DIV", offset);
+		case OP_NOT:
+			return simpleOp("OP_NOT", offset);
+		case OP_GREATER:
+			return simpleOp("OP_GREATER", offset);
+		case OP_LESS:
+			return simpleOp("OP_LESS", offset);
 		default:
 			printf("Unkown opcode %d\n", op);
 			return offset + 1;

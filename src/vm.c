@@ -38,6 +38,11 @@ static void runtimeError(const char *format, ...) {
 	clearStack();
 }
 
+static bool isFalsy(Value value) {
+	return IS_NIL(value)
+		|| (IS_BOOL(value) && !AS_BOOL(value));
+}
+
 static InterpretResult run() {
 	#define READ_BYTE() (*vm.ip++)
 	#define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
@@ -81,10 +86,19 @@ static InterpretResult run() {
 			case OP_NIL: push(NIL_VAL); break;
 			case OP_TRUE: push(BOOL_VAL(true)); break;
 			case OP_FALSE: push(BOOL_VAL(false)); break;
+			case OP_EQUAL: {
+				Value a = pop();
+				Value b = pop();
+				push(BOOL_VAL(valuesEqual(a, b)));
+				break;
+			}
+			case OP_GREATER:BINARY_OP(BOOL_VAL, >); break;
+			case OP_LESS:   BINARY_OP(BOOL_VAL, <); break;
 			case OP_ADD:    BINARY_OP(NUMBER_VAL, +); break;
 			case OP_SUB:    BINARY_OP(NUMBER_VAL, -); break;
 			case OP_MUL:    BINARY_OP(NUMBER_VAL, *); break;
 			case OP_DIV:    BINARY_OP(NUMBER_VAL, /); break;
+			case OP_NOT: push(BOOL_VAL(isFalsy(pop()))); break;
 			case OP_RETURN: {
 				printValue(pop());
 				printf("\n");

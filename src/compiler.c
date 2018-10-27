@@ -103,6 +103,11 @@ static void emitBytes(uint8_t byte1, uint8_t byte2) {
 	emitByte(byte2);
 }
 
+static void emitBytesWithLine(uint8_t byte1, uint8_t byte2, int line) {
+	emitByteWithLine(byte1, line);
+	emitByteWithLine(byte2, line);
+}
+
 static void emitReturn() {
 	emitByte(OP_RETURN);
 }
@@ -169,17 +174,28 @@ static void number() {
 }
 
 static void binary() {
-	TokenType operator_type = parser.previous.type;
-	int operator_line = parser.previous.line;
+	Token operator = parser.previous;
 
-	ParseRule *rule = getRule(operator_type);
+	ParseRule *rule = getRule(operator.type);
 	parsePrecedence((Precedence)(rule->precedence + 1));
 
-	switch (operator_type) {
-		case TOKEN_PLUS:  emitByteWithLine(OP_ADD, operator_line); break;
-		case TOKEN_MINUS: emitByteWithLine(OP_SUB, operator_line); break;
-		case TOKEN_STAR:  emitByteWithLine(OP_MUL, operator_line); break;
-		case TOKEN_SLASH: emitByteWithLine(OP_DIV, operator_line); break;
+	switch (operator.type) {
+		case TOKEN_PLUS:  emitByteWithLine(OP_ADD, operator.line); break;
+		case TOKEN_MINUS: emitByteWithLine(OP_SUB, operator.line); break;
+		case TOKEN_STAR:  emitByteWithLine(OP_MUL, operator.line); break;
+		case TOKEN_SLASH: emitByteWithLine(OP_DIV, operator.line); break;
+		case TOKEN_BANG_EQUAL:
+			emitBytesWithLine(OP_EQUAL, OP_NOT, operator.line); break;
+		case TOKEN_EQUAL_EQUAL:
+			emitByteWithLine(OP_EQUAL, operator.line); break;
+		case TOKEN_GREATER:
+			emitByteWithLine(OP_GREATER, operator.line); break;
+		case TOKEN_GREATER_EQUAL:
+			emitBytesWithLine(OP_LESS, OP_NOT, operator.line); break;
+		case TOKEN_LESS:
+			emitByteWithLine(OP_LESS, operator.line); break;
+		case TOKEN_LESS_EQUAL:
+			emitBytesWithLine(OP_GREATER, OP_NOT, operator.line); break;
 		default:
 			return; // unreachable.
 	}
@@ -191,6 +207,7 @@ static void unary() {
 	parsePrecedence(PREC_UNARY);
 
 	switch (operator.type) {
+		case TOKEN_BANG: emitByteWithLine(OP_NOT, operator.line); break;
 		case TOKEN_MINUS: emitByteWithLine(OP_NEGATE, operator.line); break;
 		default:
 			return; // unreachable.
@@ -215,14 +232,14 @@ ParseRule rules[] = {
 	{ NULL,     NULL,    PREC_NONE },       // TOKEN_SEMICOLON
 	{ NULL,     binary,  PREC_FACTOR },     // TOKEN_SLASH
 	{ NULL,     binary,  PREC_FACTOR },     // TOKEN_STAR
-	{ NULL,     NULL,    PREC_NONE },       // TOKEN_BANG
-	{ NULL,     NULL,    PREC_EQUALITY },   // TOKEN_BANG_EQUAL
+	{ unary,    NULL,    PREC_NONE },       // TOKEN_BANG
+	{ NULL,     binary,  PREC_EQUALITY },   // TOKEN_BANG_EQUAL
 	{ NULL,     NULL,    PREC_NONE },       // TOKEN_EQUAL
-	{ NULL,     NULL,    PREC_EQUALITY },   // TOKEN_EQUAL_EQUAL
-	{ NULL,     NULL,    PREC_COMPARISON }, // TOKEN_GREATER
-	{ NULL,     NULL,    PREC_COMPARISON }, // TOKEN_GREATER_EQUAL
-	{ NULL,     NULL,    PREC_COMPARISON }, // TOKEN_LESS
-	{ NULL,     NULL,    PREC_COMPARISON }, // TOKEN_LESS_EQUAL
+	{ NULL,     binary,  PREC_EQUALITY },   // TOKEN_EQUAL_EQUAL
+	{ NULL,     binary,  PREC_COMPARISON }, // TOKEN_GREATER
+	{ NULL,     binary,  PREC_COMPARISON }, // TOKEN_GREATER_EQUAL
+	{ NULL,     binary,  PREC_COMPARISON }, // TOKEN_LESS
+	{ NULL,     binary,  PREC_COMPARISON }, // TOKEN_LESS_EQUAL
 	{ NULL,     NULL,    PREC_NONE },       // TOKEN_IDENTIFIER
 	{ NULL,     NULL,    PREC_NONE },       // TOKEN_STRING
 	{ number,   NULL,    PREC_NONE },       // TOKEN_NUMBER

@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 #ifdef DEBUG
-	#define CLOX_DEBUG_PRINT_CODE
+	// #define CLOX_DEBUG_PRINT_CODE
 	#define CLOX_DEBUG_TRACE_EXECUTION
 #endif
 

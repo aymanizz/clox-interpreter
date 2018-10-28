@@ -15,13 +15,14 @@ void disassembleChunk(Chunk *chunk, const char *name) {
 }
 
 int disassembleOp(Chunk *chunk, int offset) {
-	printf("%04d ", offset);
-
 	if (offset > 0 && chunk->lines[offset] == chunk->lines[offset - 1]) {
-		printf("   | ");
+		printf("        ");
 	} else {
-		printf("%04d ", chunk->lines[offset]);
+		if (offset > 0) printf("\n");
+		printf(" %04d > ", chunk->lines[offset]);
 	}
+
+	printf("%04d ", offset);
 
 	uint8_t op = chunk->code[offset];
 	switch (op) {
@@ -61,7 +62,7 @@ static int constantOp(const char*name, Chunk *chunk, int offset) {
 	uint8_t constant = chunk->code[offset + 1];
 	printf("%s %4d (", name, constant);
 	printValue(chunk->constants.values[constant]);
-	puts(")");
+	printf(")\n");
 	return offset + 2;
 }
 

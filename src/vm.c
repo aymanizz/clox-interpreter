@@ -77,13 +77,15 @@ static InterpretResult run() {
 
 	for (;;) {
 		#ifdef CLOX_DEBUG_TRACE_EXECUTION
-			printf("	");
-			for (Value* slot = vm.stack; slot < vm.sp; ++slot) {
-				printf("[ ");
-				printValue(*slot);
-				printf(" ]");
+			if (vm.stack != vm.sp) {
+				printf("        ");
+				for (Value* slot = vm.stack; slot < vm.sp; ++slot) {
+					printf("[ ");
+					printValue(*slot);
+					printf(" ]");
+				}
+				printf("\n");
 			}
-			printf("\n");
 			disassembleOp(vm.chunk, (int)(vm.ip - vm.chunk->code));
 		#endif
 

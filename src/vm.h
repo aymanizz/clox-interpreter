@@ -3,6 +3,7 @@
 
 #include "chunk.h"
 #include "value.h"
+#include "object.h"
 
 #define CLOX_VM_STACK_MAX 256
 
@@ -11,6 +12,7 @@ typedef struct {
 	uint8_t *ip;
 	Value stack[CLOX_VM_STACK_MAX];
 	Value *sp;
+	Obj *objects;
 } VM;
 
 typedef enum {
@@ -18,6 +20,8 @@ typedef enum {
 	INTERPRET_COMPILE_ERROR,
 	INTERPRET_RUNTIME_ERROR
 } InterpretResult;
+
+extern VM vm;
 
 void initVM();
 void freeVM();

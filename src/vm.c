@@ -6,6 +6,7 @@
 #include "vm.h"
 #include "memory.h"
 #include "value.h"
+#include "object.h"
 #include "compiler.h"
 #include "debug.h"
 
@@ -17,10 +18,11 @@ static void clearStack() {
 
 void initVM() {
 	clearStack();
+	vm.objects = NULL;
 }
 
 void freeVM() {
-
+	freeObjects();
 }
 
 static Value peek(int distance) {

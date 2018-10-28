@@ -30,14 +30,14 @@ static Value peek(int distance) {
 }
 
 static void runtimeError(const char *format, ...) {
+	size_t instruction = vm.ip - vm.chunk->code;
+	fprintf(stderr, "error: line %d, in script: ", vm.chunk->lines[instruction]);
+	
 	va_list args;
 	va_start(args, format);
 	vfprintf(stderr, format, args);
-	va_end(args);
 	fputs("\n", stderr);
-
-	size_t instruction = vm.ip - vm.chunk->code;
-	fprintf(stderr, "[line %d] in script\n", vm.chunk->lines[instruction]);
+	va_end(args);
 
 	clearStack();
 }

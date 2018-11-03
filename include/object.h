@@ -16,7 +16,7 @@ struct sObj {
 struct sObjString {
 	Obj obj;
 	int length;
-	char *chars;
+	char chars[];
 };
 
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
@@ -26,8 +26,8 @@ struct sObjString {
 #define AS_STRING(value)  ((ObjString*)AS_OBJ(value))
 #define AS_CSTRING(value) (((ObjString*)AS_OBJ(value))->chars)
 
-ObjString *copyString(const char *chars, int length);
-ObjString *takeString(char *chars, int length);
+ObjString *newString(const int length);
+ObjString *copyString(const char *chars, const int length);
 void printObject(Value value);
 bool objectsEqual(Value a, Value b);
 

@@ -246,7 +246,7 @@ ParseRule rules[] = {
 	{ NULL,     binary,  PREC_COMPARISON }, // TOKEN_LESS
 	{ NULL,     binary,  PREC_COMPARISON }, // TOKEN_LESS_EQUAL
 	{ NULL,     NULL,    PREC_NONE },       // TOKEN_IDENTIFIER
-	{ string,     NULL,    PREC_NONE },       // TOKEN_STRING
+	{ string,   NULL,    PREC_NONE },       // TOKEN_STRING
 	{ number,   NULL,    PREC_NONE },       // TOKEN_NUMBER
 	{ NULL,     NULL,    PREC_AND },        // TOKEN_AND
 	{ NULL,     NULL,    PREC_NONE },       // TOKEN_CLASS

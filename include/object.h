@@ -16,6 +16,7 @@ struct sObj {
 struct sObjString {
 	Obj obj;
 	int length;
+	uint32_t hash;
 	char chars[];
 };
 
@@ -28,6 +29,7 @@ struct sObjString {
 
 ObjString *newString(const int length);
 ObjString *copyString(const char *chars, const int length);
+uint32_t hashString(const char *key, const int length);
 void printObject(Value value);
 bool objectsEqual(Value a, Value b);
 

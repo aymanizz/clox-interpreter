@@ -57,6 +57,7 @@ static void concatenate() {
 	memcpy(string->chars, a->chars, a->length);
 	memcpy(string->chars + a->length, b->chars, b->length);
 	string->chars[length] = '\0';
+	string->hash = hashString(string->chars, length);
 
 	push(OBJ_VAL(string));
 }

@@ -1,5 +1,5 @@
 #ifndef CLOX_OBJECT_H
-#define CLOX_OBJECT_H value
+#define CLOX_OBJECT_H
 
 #include "common.h"
 #include "value.h"

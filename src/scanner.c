@@ -180,7 +180,7 @@ Token scanToken() {
 
 	if (isAlpha(c)) return identifierToken();
 	if (isDigit(c)) return numberToken();
-	
+
 	switch (c) {
 		case '(': return makeToken(TOKEN_LEFT_PAREN);
 		case ')': return makeToken(TOKEN_RIGHT_PAREN);

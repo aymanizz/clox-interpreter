@@ -32,7 +32,7 @@ static Value peek(int distance) {
 static void runtimeError(const char *format, ...) {
 	size_t instruction = vm.ip - vm.chunk->code;
 	fprintf(stderr, "error: line %d, in script: ", vm.chunk->lines[instruction]);
-	
+
 	va_list args;
 	va_start(args, format);
 	vfprintf(stderr, format, args);
@@ -53,7 +53,7 @@ static void concatenate() {
 
 	int length = a->length + b->length;
 	ObjString *string = newString(length);
-	
+
 	memcpy(string->chars, a->chars, a->length);
 	memcpy(string->chars + a->length, b->chars, b->length);
 	string->chars[length] = '\0';

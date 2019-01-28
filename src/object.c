@@ -25,7 +25,7 @@ ObjString *copyString(const char *chars, const int length) {
 	ObjString *string = newString(length);
 	memcpy(string->chars, chars, length);
 	string->chars[length] = '\0';
-	
+
 	return string;
 }
 
@@ -38,7 +38,7 @@ void printObject(Value value) {
 }
 
 bool objectsEqual(Value a, Value b) {
-	if (OBJ_TYPE(a) != OBJ_TYPE(b))	
+	if (OBJ_TYPE(a) != OBJ_TYPE(b))
 		return false;
 
 	switch(OBJ_TYPE(a)) {

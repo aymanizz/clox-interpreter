@@ -9,6 +9,8 @@
 // hash table maximum load factor.
 #define TABLE_MAX_LOAD 0.75
 
+#define TOMBSTONE_VAL BOOL_VAL(true)
+
 void initTable(Table *table) {
 	table->count = 0;
 	table->capacity = 0;
@@ -22,10 +24,18 @@ void freeTable(Table *table) {
 
 static Entry *findEntry(Entry *entries, int capacity, ObjString *key) {
 	uint32_t index = key->hash % capacity;
+	Entry *tombstone = NULL;
+
 	for (;;) {
 		Entry *entry = &entries[index];
 
-		if (entry->key == key || !entry->key) {
+		if (!entry->key) {
+			if (IS_NIL(entry->value)) {
+				return tombstone != NULL ? tombstone : entry;
+			} else {
+				if (!tombstone) tombstone = entry;
+			}
+		} else if (entry->key == key) {
 			return entry;
 		}
 
@@ -36,6 +46,7 @@ static Entry *findEntry(Entry *entries, int capacity, ObjString *key) {
 static void adjustCapacity(Table *table, int new_capacity) {
 	Entry *entries = ALLOCATE(Entry, new_capacity);
 
+	table->count = 0;
 	for (int i = 0; i < table->capacity; ++i) {
 		Entry *entry = &table->entries[i];
 
@@ -46,6 +57,7 @@ static void adjustCapacity(Table *table, int new_capacity) {
 			Entry *new_entry = findEntry(entries, new_capacity, entry->key);
 			new_entry->key = entry->key;
 			new_entry->value = entry->value;
+			++table->count;
 		}
 	}
 
@@ -83,4 +95,25 @@ void tableUpdate(Table *dest, Table *src) {
 			tableSet(dest, entry->key, entry->value);
 		}
 	}
+}
+
+bool tableGet(Table *table, ObjString *key, Value *value) {
+	if (!table->entries) return false;
+
+	Entry *entry = findEntry(table->entries, table->capacity, key);
+	if (!entry->key) return false;
+
+	*value = entry->value;
+	return true;
+}
+
+bool tableDelete(Table *table, ObjString *key) {
+	if (table->count == 0) return false;
+
+	Entry *entry = findEntry(table->entries, table->capacity, key);
+	if (!entry->key) return false;
+
+	entry->key = NULL;
+	entry->value = TOMBSTONE_VAL;
+	return true;
 }

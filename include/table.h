@@ -18,5 +18,6 @@ typedef struct {
 void initTable(Table *table);
 void freeTable(Table *table);
 bool tableSet(Table *table, ObjString* key, Value value);
+void tableUpdate(Table *dest, Table *src);
 
 #endif

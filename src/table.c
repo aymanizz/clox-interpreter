@@ -75,3 +75,12 @@ bool tableSet(Table *table, ObjString *key, Value value) {
 
 	return is_new_entry;
 }
+
+void tableUpdate(Table *dest, Table *src) {
+	for (int i = 0; i < src->capacity; i++) {
+		Entry *entry = &src->entries[i];
+		if (entry->key) {
+			tableSet(dest, entry->key, entry->value);
+		}
+	}
+}

@@ -19,10 +19,12 @@ static void clearStack() {
 void initVM() {
 	clearStack();
 	vm.objects = NULL;
+	initTable(&vm.strings);
 }
 
 void freeVM() {
 	freeObjects();
+	freeTable(&vm.strings);
 }
 
 static Value peek(int distance) {
@@ -52,13 +54,12 @@ static void concatenate() {
 	ObjString *a = AS_STRING(pop());
 
 	int length = a->length + b->length;
-	ObjString *string = newString(length);
+	char *chars = ALLOCATE(char, length + 1);
+	memcpy(chars, a->chars, a->length);
+	memcpy(chars + a->length, b->chars, b->length);
+	chars[length] = '\0';
 
-	memcpy(string->chars, a->chars, a->length);
-	memcpy(string->chars + a->length, b->chars, b->length);
-	string->chars[length] = '\0';
-	string->hash = hashString(string->chars, length);
-
+	ObjString *string = copyString(chars, length);
 	push(OBJ_VAL(string));
 }
 

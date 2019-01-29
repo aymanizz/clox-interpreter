@@ -21,4 +21,7 @@ bool tableSet(Table *table, ObjString* key, Value value);
 void tableUpdate(Table *dest, Table *src);
 bool tableGet(Table *table, ObjString *key, Value *value);
 bool tableDelete(Table *table, ObjString *key);
+ObjString *tableFindString(
+	Table *table, const char *chars, int length, uint32_t hash);
+
 #endif

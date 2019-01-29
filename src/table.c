@@ -36,6 +36,8 @@ static Entry *findEntry(Entry *entries, int capacity, ObjString *key) {
 				if (!tombstone) tombstone = entry;
 			}
 		} else if (entry->key == key) {
+			// string interning guarantees string objects with the same
+			// address are equal.
 			return entry;
 		}
 
@@ -116,4 +118,24 @@ bool tableDelete(Table *table, ObjString *key) {
 	entry->key = NULL;
 	entry->value = TOMBSTONE_VAL;
 	return true;
+}
+
+ObjString *tableFindString(Table *table, const char *chars, int length,
+	uint32_t hash) {
+	// for string interning used by the vm.
+	if (!table->entries) return NULL;
+
+	uint32_t index = hash % table->capacity;
+
+	for (;;) {
+		Entry *entry = &table->entries[index];
+
+		if (!entry->key) return NULL;
+		if (entry->key->length == entry->key->length
+			&& !memcmp(entry->key->chars, chars, length)) {
+			return entry->key;
+		}
+
+		index = (index + 1) % table->capacity;
+	}
 }

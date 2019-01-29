@@ -3,6 +3,8 @@
 
 #include "memory.h"
 #include "object.h"
+#include "vm.h"
+#include "table.h"
 
 #define ALLOCATE_OBJ(type, object_type) \
 	(type*)allocateObj(sizeof(type), object_type)
@@ -34,10 +36,16 @@ uint32_t hashString(const char *key, const int length) {
 }
 
 ObjString *copyString(const char *chars, const int length) {
-	ObjString *string = newString(length);
+	uint32_t hash = hashString(chars, length);
+	ObjString *string = tableFindString(&vm.strings, chars, length, hash);
+	if (string) return string;
+
+	string = newString(length);
 	memcpy(string->chars, chars, length);
 	string->chars[length] = '\0';
-	string->hash = hashString(chars, length);
+	string->hash = hash;
+
+	tableSet(&vm.strings, string, NIL_VAL);
 
 	return string;
 }
@@ -56,10 +64,9 @@ bool objectsEqual(Value a, Value b) {
 
 	switch(OBJ_TYPE(a)) {
 		case OBJ_STRING: {
-			ObjString *a_string = AS_STRING(a);
-			ObjString *b_string = AS_STRING(b);
-			return a_string->length == b_string->length
-				&& !strcmp(a_string->chars, b_string->chars);
+			// string interning guarantees string objects with the same
+			// address are equal.
+			return AS_OBJ(a) == AS_OBJ(b);
 		}
 	}
 

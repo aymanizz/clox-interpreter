@@ -113,8 +113,8 @@ static InterpretResult run() {
 				push(BOOL_VAL(valuesEqual(a, b)));
 				break;
 			}
-			case OP_GREATER:BINARY_OP(BOOL_VAL, >); break;
-			case OP_LESS:   BINARY_OP(BOOL_VAL, <); break;
+			case OP_GREATER: BINARY_OP(BOOL_VAL, >); break;
+			case OP_LESS: BINARY_OP(BOOL_VAL, <); break;
 			case OP_ADD: {
 				if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
 					concatenate();
@@ -126,9 +126,9 @@ static InterpretResult run() {
 				}
 				break;
 			}
-			case OP_SUB:    BINARY_OP(NUMBER_VAL, -); break;
-			case OP_MUL:    BINARY_OP(NUMBER_VAL, *); break;
-			case OP_DIV:    BINARY_OP(NUMBER_VAL, /); break;
+			case OP_SUB: BINARY_OP(NUMBER_VAL, -); break;
+			case OP_MUL: BINARY_OP(NUMBER_VAL, *); break;
+			case OP_DIV: BINARY_OP(NUMBER_VAL, /); break;
 			case OP_NOT: push(BOOL_VAL(isFalsy(pop()))); break;
 			case OP_RETURN: {
 				printValue(pop());

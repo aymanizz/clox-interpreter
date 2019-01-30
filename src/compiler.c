@@ -203,8 +203,38 @@ static void statement() {
 	expressionStatement();
 }
 
+static uint8_t identifierConstant(Token *name) {
+	return makeConstant(OBJ_VAL(copyString(name->start, name->length)));
+}
+
+static uint8_t parseVariable(const char *error_msg) {
+	consume(TOKEN_IDENTIFIER, error_msg);
+	return identifierConstant(&parser.previous);
+}
+
+static void defineVariable(uint8_t global) {
+	emitBytes(OP_DEF_GLOBAL, global);
+}
+
+static void varDeclaration() {
+	uint8_t global = parseVariable("expected variable name");
+
+	if (match(TOKEN_EQUAL)) {
+		expression();
+	} else {
+		emitByte(OP_NIL);
+	}
+	consume(TOKEN_SEMICOLON, "expected ';' after variable declaration");
+
+	defineVariable(global);
+}
+
 static void declaration() {
-	statement();
+	if (match(TOKEN_VAR)) {
+		varDeclaration();
+	} else {
+		statement();
+	}
 
 	if (parser.panic_mode) synchronize();
 }

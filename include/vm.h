@@ -13,6 +13,7 @@ typedef struct {
 	uint8_t *ip;
 	Value stack[CLOX_VM_STACK_MAX];
 	Value *sp;
+	Table globals;
 	Table strings;
 	Obj *objects;
 } VM;

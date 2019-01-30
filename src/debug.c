@@ -34,6 +34,8 @@ int disassembleOp(Chunk *chunk, int offset) {
 			return simpleOp("OP_TRUE", offset);
 		case OP_FALSE:
 			return simpleOp("OP_FALSE", offset);
+		case OP_POP:
+			return simpleOp("OP_POP", offset);
 		case OP_NEGATE:
 			return simpleOp("OP_NEGATE", offset);
 		case OP_RETURN:

@@ -40,6 +40,8 @@ int disassembleOp(Chunk *chunk, int offset) {
 			return constantOp("OP_DEF_GLOBAL", chunk, offset);
 		case OP_GET_GLOBAL:
 			return constantOp("OP_GET_GLOBAL", chunk, offset);
+		case OP_SET_GLOBAL:
+			return constantOp("OP_SET_GLOBAL", chunk, offset);
 		case OP_NEGATE:
 			return simpleOp("OP_NEGATE", offset);
 		case OP_RETURN:

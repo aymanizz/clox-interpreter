@@ -162,7 +162,9 @@ static void emitConstant(Value value) {
 }
 
 static void endCompiler() {
+	// TODO: remove when OP_RETURN is correctly implemented
 	emitReturn();
+
 	#ifdef CLOX_DEBUG_PRINT_CODE
 		if (!parser.had_error) {
 			disassembleChunk(currentChunk(), "code");
@@ -195,7 +197,8 @@ static void expression() {
 
 static void expressionStatement() {
 	expression();
-	emitByte(OP_POP);
+	// TODO: uncomment this once OP_RETURN is correctly implemented!
+	// emitByte(OP_POP);
 	consume(TOKEN_SEMICOLON, "expected ';' after expression");
 }
 
@@ -232,6 +235,13 @@ static void varDeclaration() {
 static void declaration() {
 	if (match(TOKEN_VAR)) {
 		varDeclaration();
+		// TODO: remove when OP_RETURN is correctly implemented (requires
+		// functions implementation.)
+		// !WORKAROUND, declaration statements push nil to the top of the
+		// stack to prevent underflowing the stack; because all statements
+		// end with OP_RETURN, which with the current implementation pops
+		// the stack.
+		emitByte(OP_NIL);
 	} else {
 		statement();
 	}

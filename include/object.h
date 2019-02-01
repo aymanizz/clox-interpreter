@@ -30,6 +30,7 @@ struct sObjString {
 ObjString *newString(const int length);
 ObjString *copyString(const char *chars, const int length);
 uint32_t hashString(const char *key, const int length);
+ObjString *stringConcat(ObjString *a, ObjString *b);
 void printObject(Value value);
 bool objectsEqual(Value a, Value b);
 

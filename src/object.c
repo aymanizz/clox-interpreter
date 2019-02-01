@@ -50,6 +50,29 @@ ObjString *copyString(const char *chars, const int length) {
 	return string;
 }
 
+ObjString *stringConcat(ObjString *a, ObjString *b) {
+	int length = a->length + b->length;
+
+	ObjString *string = newString(length);
+	memcpy(string->chars, a->chars, a->length);
+	memcpy(string->chars + a->length, b->chars, b->length);
+	string->chars[length] = '\0';
+
+	uint32_t hash = hashString(string->chars, length);
+	ObjString *internal = tableFindString(
+		&vm.strings, string->chars, length, hash);
+	if (internal) {
+		FREE(string, ObjString);
+		return internal;
+	}
+
+	string->length = length;
+	string->hash = hash;
+	tableSet(&vm.strings, string, NIL_VAL);
+
+	return string;
+}
+
 void printObject(Value value) {
 	switch(OBJ_TYPE(value)) {
 		case OBJ_STRING:

@@ -35,7 +35,7 @@ uint32_t hashString(const char *key, const int length) {
 	return hash;
 }
 
-ObjString *copyString(const char *chars, const int length) {
+ObjString *copyString(const char *chars, int length) {
 	uint32_t hash = hashString(chars, length);
 	ObjString *string = tableFindString(&vm.strings, chars, length, hash);
 	if (string) return string;

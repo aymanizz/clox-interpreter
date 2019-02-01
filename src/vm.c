@@ -108,7 +108,7 @@ static InterpretResult run() {
 				ObjString *name = READ_STRING();
 				Value value;
 				if (!tableGet(&vm.globals, name, &value)) {
-					runtimeError("undefined variable '%s'.", name->chars);
+					runtimeError("undefined variable '%s'", name->chars);
 					return INTERPRET_RUNTIME_ERROR;
 				}
 				push(value);
@@ -136,7 +136,7 @@ static InterpretResult run() {
 					ObjString *a = AS_STRING(pop());
 					push(OBJ_VAL(stringConcat(a, b)));
 				} else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
-					BINARY_OP(NUMBER_VAL, +); break;
+					BINARY_OP(NUMBER_VAL, +);
 				} else {
 					runtimeError("operands must be two numbers or two strings");
 					return INTERPRET_RUNTIME_ERROR;

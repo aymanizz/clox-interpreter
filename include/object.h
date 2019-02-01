@@ -28,7 +28,7 @@ struct sObjString {
 #define AS_CSTRING(value) (((ObjString*)AS_OBJ(value))->chars)
 
 ObjString *newString(const int length);
-ObjString *copyString(const char *chars, const int length);
+ObjString *copyString(const char *chars, int length);
 uint32_t hashString(const char *key, const int length);
 ObjString *stringConcat(ObjString *a, ObjString *b);
 void printObject(Value value);

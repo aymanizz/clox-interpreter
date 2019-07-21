@@ -5,6 +5,7 @@
 
 static int simpleOp(const char *name, int offset);
 static int constantOp(const char*name, Chunk *chunk, int offset);
+static int byteOp(const char *name, Chunk *chunk, int offset);
 
 void disassembleChunk(Chunk *chunk, const char *name) {
 	printf("[==================] %s [===================]\n", name);
@@ -36,6 +37,10 @@ int disassembleOp(Chunk *chunk, int offset) {
 			return simpleOp("OP_FALSE", offset);
 		case OP_POP:
 			return simpleOp("OP_POP", offset);
+		case OP_GET_LOCAL:
+			return byteOp("OP_GET_LOCAL", chunk, offset);
+		case OP_SET_LOCAL:
+			return byteOp("OP_SET_LOCAL", chunk, offset);
 		case OP_DEF_GLOBAL:
 			return constantOp("OP_DEF_GLOBAL", chunk, offset);
 		case OP_GET_GLOBAL:
@@ -66,7 +71,13 @@ int disassembleOp(Chunk *chunk, int offset) {
 	}
 }
 
-static int constantOp(const char*name, Chunk *chunk, int offset) {
+static int byteOp(const char *name, Chunk *chunk, int offset) {
+	uint8_t slot = chunk->code[offset + 1];
+	printf("%-16s %4d\n", name, slot);
+	return offset + 2;
+}
+
+static int constantOp(const char *name, Chunk *chunk, int offset) {
 	uint8_t constant = chunk->code[offset + 1];
 	printf("%s %4d (", name, constant);
 	printValue(chunk->constants.values[constant]);

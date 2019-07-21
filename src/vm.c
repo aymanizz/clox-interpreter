@@ -80,8 +80,8 @@ static InterpretResult run() {
 			disassembleOp(vm.chunk, (int)(vm.ip - vm.chunk->code));
 		#endif
 
-		uint8_t op;
-		switch (op = READ_BYTE()) {
+		uint8_t op = READ_BYTE();
+		switch (op) {
 			case OP_CONSTANT: {
 				Value constant = READ_CONSTANT();
 				push(constant);
@@ -98,6 +98,16 @@ static InterpretResult run() {
 			case OP_TRUE: push(BOOL_VAL(true)); break;
 			case OP_FALSE: push(BOOL_VAL(false)); break;
 			case OP_POP: pop(); break;
+			case OP_GET_LOCAL: {
+				uint8_t slot = READ_BYTE();
+				push(vm.stack[slot]);
+				break;
+			}
+			case OP_SET_LOCAL: {
+				uint8_t slot = READ_BYTE();
+				vm.stack[slot] = peek(0);
+				break;
+			}
 			case OP_DEF_GLOBAL: {
 				ObjString *name = READ_STRING();
 				tableSet(&vm.globals, name, peek(0));

@@ -158,12 +158,9 @@ static InterpretResult run() {
 			case OP_DIV: BINARY_OP(NUMBER_VAL, /); break;
 			case OP_NOT: push(BOOL_VAL(isFalsy(pop()))); break;
 			case OP_RETURN: {
-				for (Value *sp = vm.stack; sp != vm.sp; ++sp) {
-					printValue(*sp);
-					printf("\n");
-				}
 				while (vm.sp != vm.stack) {
-					pop();
+					printValue(pop());
+					printf("\n");
 				}
 				return INTERPRET_OK;
 			}

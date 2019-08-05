@@ -6,7 +6,11 @@
 static int simpleOp(const char *name, int offset);
 static int constantOp(const char *name, Chunk *chunk, int offset);
 static int byteOp(const char *name, Chunk *chunk, int offset);
-static int jumpOp(const char *name, Chunk *chunk, int offset);
+
+typedef enum { FORWARD = 1, BACKWARD = -1 } JumpDirection;
+static int jumpOp(
+	const char *name, JumpDirection direction, Chunk *chunk, int offset
+);
 
 void disassembleChunk(Chunk *chunk, const char *name) {
 	printf("[==================] %s [===================]\n", name);
@@ -69,9 +73,11 @@ int disassembleOp(Chunk *chunk, int offset) {
 		case OP_LESS:
 			return simpleOp("OP_LESS", offset);
 		case OP_JUMP:
-			return jumpOp("OP_JUMP", chunk, offset);
+			return jumpOp("OP_JUMP", FORWARD, chunk, offset);
 		case OP_JUMP_IF_FALSE:
-			return jumpOp("OP_JUMP_IF_FALSE", chunk, offset);
+			return jumpOp("OP_JUMP_IF_FALSE", FORWARD, chunk, offset);
+		case OP_LOOP:
+			return jumpOp("OP_LOOP", BACKWARD, chunk, offset);
 	}
 
 	printf("Unkown opcode %d\n", op);
@@ -97,8 +103,10 @@ static int simpleOp(const char *name, int offset) {
 	return offset + 1;
 }
 
-static int jumpOp(const char *name, Chunk *chunk, int offset) {
+static int jumpOp(
+	const char *name, JumpDirection direction, Chunk *chunk, int offset
+) {
 	int jump = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
-	printf("%-16s %4d\n", name, offset + 3 + jump);
+	printf("%-16s %4d\n", name, offset + 3 + direction * jump);
 	return offset + 3;
 }

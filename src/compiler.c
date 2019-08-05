@@ -173,14 +173,22 @@ static int emitJump(uint8_t jump) {
 
 static void patchJump(int offset) {
 	int jump = currentChunk()->size - offset - 2;
-
-	if (jump > UINT8_MAX) {
+	if (jump > UINT8_MAX)
 		error("too much code to jump over");
-		return;
-	}
 
 	currentChunk()->code[offset] = (jump >> 8) & 0xff;
 	currentChunk()->code[offset + 1] = jump & 0xff;
+}
+
+static void emitLoop(int start) {
+	emitByte(OP_LOOP);
+
+	int jump = currentChunk()->size - start + 2;
+	if (jump > UINT8_MAX)
+		error("loop body too large");
+
+	emitByte((jump >> 8) & 0xff);
+	emitByte(jump & 0xff);
 }
 
 static void emitReturn() {
@@ -286,6 +294,21 @@ static void ifStatement() {
 	patchJump(else_jump);
 }
 
+static void whileStatement() {
+	int start = currentChunk()->size;
+
+	consume(TOKEN_LEFT_PAREN, "expected a '(' after 'while'");
+	expression();
+	consume(TOKEN_RIGHT_PAREN, "expected a ')' after condition");
+
+	int jump = emitJump(OP_JUMP_IF_FALSE);
+	emitByte(OP_POP);
+	statement();
+	emitLoop(start);
+	patchJump(jump);
+	emitByte(OP_POP);
+}
+
 static void block() {
 	while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
 		declaration();
@@ -297,6 +320,8 @@ static void block() {
 static void statement() {
 	if (match(TOKEN_IF)) {
 		ifStatement();
+	} else if (match(TOKEN_WHILE)) {
+		whileStatement();
 	} else if (match(TOKEN_LEFT_BRACE)) {
 		beginScope();
 		block();

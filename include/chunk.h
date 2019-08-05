@@ -24,6 +24,8 @@ typedef enum {
 	OP_SUB,
 	OP_MUL,
 	OP_DIV,
+	OP_JUMP,
+	OP_JUMP_IF_FALSE,
 	OP_RETURN,
 } OpCode;
 

@@ -163,6 +163,26 @@ static void emitBytesWithLine(uint8_t byte1, uint8_t byte2, int line) {
 	emitByteWithLine(byte2, line);
 }
 
+static int emitJump(uint8_t jump) {
+	emitByte(jump);
+	// 2 bytes jump target for later patching
+	emitByte(0xff);
+	emitByte(0xff);
+	return currentChunk()->size - 2;
+}
+
+static void patchJump(int offset) {
+	int jump = currentChunk()->size - offset - 2;
+
+	if (jump > UINT8_MAX) {
+		error("too much code to jump over");
+		return;
+	}
+
+	currentChunk()->code[offset] = (jump >> 8) & 0xff;
+	currentChunk()->code[offset + 1] = jump & 0xff;
+}
+
 static void emitReturn() {
 	emitByte(OP_RETURN);
 }
@@ -213,6 +233,7 @@ static void endScope() {
 
 static ParseRule *getRule(TokenType type);
 static void declaration();
+static void statement();
 static void expression();
 
 static void parsePrecedence(Precedence precedence) {
@@ -248,6 +269,23 @@ static void expressionStatement() {
 	consume(TOKEN_SEMICOLON, "expected ';' after expression");
 }
 
+static void ifStatement() {
+	consume(TOKEN_LEFT_PAREN, "expected '(' after 'if'");
+	expression();
+	consume(TOKEN_RIGHT_PAREN, "expected ')' after condition");
+
+	int then_jump = emitJump(OP_JUMP_IF_FALSE);
+	emitByte(OP_POP);
+	statement();
+	int else_jump = emitJump(OP_JUMP);
+	patchJump(then_jump);
+	emitByte(OP_POP);
+	if (match(TOKEN_ELSE))
+		statement();
+
+	patchJump(else_jump);
+}
+
 static void block() {
 	while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
 		declaration();
@@ -257,7 +295,9 @@ static void block() {
 }
 
 static void statement() {
-	if (match(TOKEN_LEFT_BRACE)) {
+	if (match(TOKEN_IF)) {
+		ifStatement();
+	} else if (match(TOKEN_LEFT_BRACE)) {
 		beginScope();
 		block();
 		endScope();

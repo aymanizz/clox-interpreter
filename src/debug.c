@@ -4,8 +4,9 @@
 #include "value.h"
 
 static int simpleOp(const char *name, int offset);
-static int constantOp(const char*name, Chunk *chunk, int offset);
+static int constantOp(const char *name, Chunk *chunk, int offset);
 static int byteOp(const char *name, Chunk *chunk, int offset);
+static int jumpOp(const char *name, Chunk *chunk, int offset);
 
 void disassembleChunk(Chunk *chunk, const char *name) {
 	printf("[==================] %s [===================]\n", name);
@@ -65,6 +66,10 @@ int disassembleOp(Chunk *chunk, int offset) {
 			return simpleOp("OP_GREATER", offset);
 		case OP_LESS:
 			return simpleOp("OP_LESS", offset);
+		case OP_JUMP:
+			return jumpOp("OP_JUMP", chunk, offset);
+		case OP_JUMP_IF_FALSE:
+			return jumpOp("OP_JUMP_IF_FALSE", chunk, offset);
 		default:
 			printf("Unkown opcode %d\n", op);
 			return offset + 1;
@@ -88,4 +93,10 @@ static int constantOp(const char *name, Chunk *chunk, int offset) {
 static int simpleOp(const char *name, int offset) {
 	printf("%-16s\n", name);
 	return offset + 1;
+}
+
+static int jumpOp(const char *name, Chunk *chunk, int offset) {
+	int jump = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
+	printf("%-16s %4d\n", name, offset + 3 + jump);
+	return offset + 3;
 }

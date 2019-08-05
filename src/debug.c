@@ -26,7 +26,7 @@ int disassembleOp(Chunk *chunk, int offset) {
 
 	printf("%04d ", offset);
 
-	uint8_t op = chunk->code[offset];
+	OpCode op = chunk->code[offset];
 	switch (op) {
 		case OP_CONSTANT:
 			return constantOp("OP_CONSTANT", chunk, offset);
@@ -72,10 +72,10 @@ int disassembleOp(Chunk *chunk, int offset) {
 			return jumpOp("OP_JUMP", chunk, offset);
 		case OP_JUMP_IF_FALSE:
 			return jumpOp("OP_JUMP_IF_FALSE", chunk, offset);
-		default:
-			printf("Unkown opcode %d\n", op);
-			return offset + 1;
 	}
+
+	printf("Unkown opcode %d\n", op);
+	return offset + 1;
 }
 
 static int byteOp(const char *name, Chunk *chunk, int offset) {

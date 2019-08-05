@@ -81,7 +81,7 @@ static InterpretResult run() {
 			disassembleOp(vm.chunk, (int)(vm.ip - vm.chunk->code));
 		#endif
 
-		uint8_t op = READ_BYTE();
+		OpCode op = READ_BYTE();
 		switch (op) {
 			case OP_CONSTANT: {
 				Value constant = READ_CONSTANT();

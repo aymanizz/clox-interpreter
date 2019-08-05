@@ -62,6 +62,8 @@ int disassembleOp(Chunk *chunk, int offset) {
 			return simpleOp("OP_DIV", offset);
 		case OP_NOT:
 			return simpleOp("OP_NOT", offset);
+		case OP_EQUAL:
+			return simpleOp("OP_EQUAL", offset);
 		case OP_GREATER:
 			return simpleOp("OP_GREATER", offset);
 		case OP_LESS:

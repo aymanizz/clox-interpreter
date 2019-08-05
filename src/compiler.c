@@ -243,6 +243,7 @@ static ParseRule *getRule(TokenType type);
 static void declaration();
 static void statement();
 static void expression();
+static void varDeclaration();
 
 static void parsePrecedence(Precedence precedence) {
 	advance();
@@ -309,6 +310,50 @@ static void whileStatement() {
 	emitByte(OP_POP);
 }
 
+static void forStatement() {
+	beginScope();
+	consume(TOKEN_LEFT_PAREN, "expected a '(' after 'for'");
+
+	if (match(TOKEN_VAR)) {
+		varDeclaration();
+	} else if (match(TOKEN_SEMICOLON)) {
+		// no initializer.
+	} else {
+		expressionStatement();
+	}
+
+	int start = currentChunk()->size;
+
+	int exit_jump = -1;
+	if (!match(TOKEN_SEMICOLON)) {
+		expression();
+		consume(TOKEN_SEMICOLON, "expected a ';' after loop condition");
+		exit_jump = emitJump(OP_JUMP_IF_FALSE);
+		emitByte(OP_POP);
+	}
+
+	if (!match(TOKEN_RIGHT_PAREN)) {
+		int jump = emitJump(OP_JUMP);
+		int increment_start = currentChunk()->size;
+
+		expression();
+		emitByte(OP_POP);
+		consume(TOKEN_RIGHT_PAREN, "expected a ')' after clauses");
+
+		emitLoop(start);
+		start = increment_start;
+		patchJump(jump);
+	}
+
+	statement();
+	emitLoop(start);
+	if (exit_jump != -1) {
+		patchJump(exit_jump);
+		emitByte(OP_POP);
+	}
+	endScope();
+}
+
 static void block() {
 	while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
 		declaration();
@@ -322,6 +367,8 @@ static void statement() {
 		ifStatement();
 	} else if (match(TOKEN_WHILE)) {
 		whileStatement();
+	} else if (match(TOKEN_FOR)) {
+		forStatement();
 	} else if (match(TOKEN_LEFT_BRACE)) {
 		beginScope();
 		block();
@@ -559,7 +606,7 @@ ParseRule rules[] = {
 	{ NULL,     NULL,    PREC_NONE },       // TOKEN_FOR
 	{ NULL,     NULL,    PREC_NONE },       // TOKEN_IF
 	{ literal,  NULL,    PREC_NONE },       // TOKEN_NIL
-	{ NULL,     or_,    PREC_OR },         // TOKEN_OR
+	{ NULL,     or_,    PREC_OR },          // TOKEN_OR
 	{ NULL,     NULL,    PREC_NONE },       // TOKEN_PRINT
 	{ NULL,     NULL,    PREC_NONE },       // TOKEN_RETURN
 	{ NULL,     NULL,    PREC_NONE },       // TOKEN_SUPER

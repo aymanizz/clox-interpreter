@@ -8,7 +8,8 @@
 # SOURCE_DIR   Directory where source files are found.
 # INCLUDE_DIR  Directory where header files are found.
 
-CFLAGS := -std=c99 -Wall -Wextra -Werror -Wno-unused-parameter
+# return-type warning has false-positives and conflicts with clang-tidy
+CFLAGS := -std=c99 -Wall -Wextra -Werror -Wno-unused-parameter -Wno-return-type
 INCLUDE_DIR := include
 SOURCE_DIR := src
 BUILD_DIR := build
@@ -25,6 +26,8 @@ else
 endif
 
 CFLAGS += -I$(INCLUDE_DIR)
+# stream checks generates annoying false-positives warnings
+CLANG_TIDY_CHECKS=-*,clang-analyzer-*,-clang-analyzer-cplusplus*,-clang-analyzer-alpha.unix.Stream
 
 # Files.
 HEADERS := $(wildcard $(INCLUDE_DIR)/*.h)
@@ -32,6 +35,23 @@ SOURCES := $(wildcard $(SOURCE_DIR)/*.c)
 OBJECTS := $(addprefix $(OBJ_DIR)/, $(notdir $(SOURCES:.c=.o)))
 
 # Targets ---------------------------------------------------------------------
+
+all: format lint build
+
+format: $(SOURCES) $(HEADERS)
+	@ clang-format -style=file -i $^
+
+check-format: $(SOURCES) $(HEADERS)
+	@ for f in $^; do echo "checking $$f"; clang-format -style=file $$f | diff $$f - || exit 1; done
+
+build: $(BIN_DIR)/$(TARGET)
+
+lint: $(SOURCES) $(HEADERS)
+	@ OUTPUT=$$(clang-tidy -checks=$(CLANG_TIDY_CHECKS) $^ -- -I$(INCLUDE_DIR)); \
+	if test -n "$$OUTPUT"; then echo "$$OUTPUT" && exit 1; fi
+
+clean:
+	@ $(RM) -rf $(BUILD_DIR) $(BIN_DIR)
 
 # Link the interpreter.
 $(BIN_DIR)/$(TARGET): $(OBJECTS)
@@ -45,7 +65,4 @@ $(OBJ_DIR)/%.o: $(SOURCE_DIR)/%.c $(HEADERS)
 	@ mkdir -p $(OBJ_DIR)
 	@ $(CC) -c $(CFLAGS) -o $@ $<
 
-clean:
-	@ $(RM) -rf $(BUILD_DIR) $(BIN_DIR)
-
-.PHONY: default clean
+.PHONY: all clean

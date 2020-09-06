@@ -12,130 +12,130 @@
 #define TOMBSTONE_VAL BOOL_VAL(true)
 
 void initTable(Table *table) {
-	table->count = 0;
-	table->capacity = 0;
-	table->entries = NULL;
+  table->count = 0;
+  table->capacity = 0;
+  table->entries = NULL;
 }
 
 void freeTable(Table *table) {
-	FREE_ARRAY(table->entries, Entry, table->capacity);
-	initTable(table);
+  FREE_ARRAY(table->entries, Entry, table->capacity);
+  initTable(table);
 }
 
 static Entry *findEntry(Entry *entries, int capacity, ObjString *key) {
-	uint32_t index = key->hash % capacity;
-	Entry *tombstone = NULL;
+  uint32_t index = key->hash % capacity;
+  Entry *tombstone = NULL;
 
-	for (;;) {
-		Entry *entry = &entries[index];
+  for (;;) {
+    Entry *entry = &entries[index];
 
-		if (!entry->key) {
-			if (IS_NIL(entry->value)) {
-				return tombstone != NULL ? tombstone : entry;
-			} else {
-				if (!tombstone) tombstone = entry;
-			}
-		} else if (entry->key == key) {
-			// string interning guarantees string objects with the same
-			// address are equal.
-			return entry;
-		}
+    if (!entry->key) {
+      if (IS_NIL(entry->value)) {
+        return tombstone != NULL ? tombstone : entry;
+      } else {
+        if (!tombstone) tombstone = entry;
+      }
+    } else if (entry->key == key) {
+      // string interning guarantees string objects with the same
+      // address are equal.
+      return entry;
+    }
 
-		index = (index + 1) % capacity;
-	}
+    index = (index + 1) % capacity;
+  }
 }
 
 static void adjustCapacity(Table *table, int new_capacity) {
-	Entry *entries = ALLOCATE(Entry, new_capacity);
+  Entry *entries = ALLOCATE(Entry, new_capacity);
 
-	table->count = 0;
-	for (int i = 0; i < table->capacity; ++i) {
-		Entry *entry = &table->entries[i];
+  table->count = 0;
+  for (int i = 0; i < table->capacity; ++i) {
+    Entry *entry = &table->entries[i];
 
-		if (!entry->key) {
-			entries[i].key = NULL;
-			entries[i].value = NIL_VAL;
-		} else {
-			Entry *new_entry = findEntry(entries, new_capacity, entry->key);
-			new_entry->key = entry->key;
-			new_entry->value = entry->value;
-			++table->count;
-		}
-	}
+    if (!entry->key) {
+      entries[i].key = NULL;
+      entries[i].value = NIL_VAL;
+    } else {
+      Entry *new_entry = findEntry(entries, new_capacity, entry->key);
+      new_entry->key = entry->key;
+      new_entry->value = entry->value;
+      ++table->count;
+    }
+  }
 
-	// initialize the rest of the entries.
-	for (int i = table->capacity; i < new_capacity; ++i) {
-		entries[i].key = NULL;
-		entries[i].value = NIL_VAL;
-	}
+  // initialize the rest of the entries.
+  for (int i = table->capacity; i < new_capacity; ++i) {
+    entries[i].key = NULL;
+    entries[i].value = NIL_VAL;
+  }
 
-	FREE_ARRAY(table->entries, Entry, table->capacity);
-	table->entries = entries;
-	table->capacity = new_capacity;
+  FREE_ARRAY(table->entries, Entry, table->capacity);
+  table->entries = entries;
+  table->capacity = new_capacity;
 }
 
 bool tableSet(Table *table, ObjString *key, Value value) {
-	if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
-		int capacity = GROW_CAPACITY(table->capacity);
-		adjustCapacity(table, capacity);
-	}
+  if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
+    int capacity = GROW_CAPACITY(table->capacity);
+    adjustCapacity(table, capacity);
+  }
 
-	Entry *entry = findEntry(table->entries, table->capacity, key);
-	bool is_new_entry = entry->key == NULL;
-	entry->key = key;
-	entry->value = value;
+  Entry *entry = findEntry(table->entries, table->capacity, key);
+  bool is_new_entry = entry->key == NULL;
+  entry->key = key;
+  entry->value = value;
 
-	if (is_new_entry) ++table->count;
+  if (is_new_entry) ++table->count;
 
-	return is_new_entry;
+  return is_new_entry;
 }
 
 void tableUpdate(Table *dest, Table *src) {
-	for (int i = 0; i < src->capacity; i++) {
-		Entry *entry = &src->entries[i];
-		if (entry->key) {
-			tableSet(dest, entry->key, entry->value);
-		}
-	}
+  for (int i = 0; i < src->capacity; i++) {
+    Entry *entry = &src->entries[i];
+    if (entry->key) {
+      tableSet(dest, entry->key, entry->value);
+    }
+  }
 }
 
 bool tableGet(Table *table, ObjString *key, Value *value) {
-	if (!table->entries) return false;
+  if (!table->entries) return false;
 
-	Entry *entry = findEntry(table->entries, table->capacity, key);
-	if (!entry->key) return false;
+  Entry *entry = findEntry(table->entries, table->capacity, key);
+  if (!entry->key) return false;
 
-	*value = entry->value;
-	return true;
+  *value = entry->value;
+  return true;
 }
 
 bool tableDelete(Table *table, ObjString *key) {
-	if (table->count == 0) return false;
+  if (table->count == 0) return false;
 
-	Entry *entry = findEntry(table->entries, table->capacity, key);
-	if (!entry->key) return false;
+  Entry *entry = findEntry(table->entries, table->capacity, key);
+  if (!entry->key) return false;
 
-	entry->key = NULL;
-	entry->value = TOMBSTONE_VAL;
-	return true;
+  entry->key = NULL;
+  entry->value = TOMBSTONE_VAL;
+  return true;
 }
 
 ObjString *tableFindString(Table *table, const char *chars, int length,
-	uint32_t hash) {
-	// for string interning used by the vm.
-	if (!table->entries) return NULL;
+                           uint32_t hash) {
+  // for string interning used by the vm.
+  if (!table->entries) return NULL;
 
-	uint32_t index = hash % table->capacity;
+  uint32_t index = hash % table->capacity;
 
-	for (;;) {
-		Entry *entry = &table->entries[index];
+  for (;;) {
+    Entry *entry = &table->entries[index];
 
-		if (!entry->key) return NULL;
-		if (entry->key->length == entry->key->length
-			&& !memcmp(entry->key->chars, chars, length)) {
-			return entry->key;
-		}
+    if (!entry->key) return NULL;
+    if (entry->key->length == length && entry->key->hash == hash &&
+        !memcmp(entry->key->chars, chars, length)) {
+      return entry->key;
+    }
 
-		index = (index + 1) % table->capacity;
-	}
+    index = (index + 1) % table->capacity;
+  }
 }

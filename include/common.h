@@ -6,8 +6,8 @@
 #include <stdint.h>
 
 #ifdef DEBUG
-	// #define CLOX_DEBUG_PRINT_CODE
-	#define CLOX_DEBUG_TRACE_EXECUTION
+// #define CLOX_DEBUG_PRINT_CODE
+#define CLOX_DEBUG_TRACE_EXECUTION
 #endif
 
 #define UINT8_COUNT (UINT8_MAX + 1)

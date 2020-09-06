@@ -38,6 +38,8 @@ OBJECTS := $(addprefix $(OBJ_DIR)/, $(notdir $(SOURCES:.c=.o)))
 
 all: format lint build
 
+ci: check-format lint build
+
 format: $(SOURCES) $(HEADERS)
 	@ clang-format -style=file -i $^
 

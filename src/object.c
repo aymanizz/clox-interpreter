@@ -91,4 +91,6 @@ bool objectsEqual(Value a, Value b) {
       return AS_OBJ(a) == AS_OBJ(b);
     }
   }
+
+  return false;  // unreachable.
 }

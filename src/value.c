@@ -55,4 +55,6 @@ bool valuesEqual(Value a, Value b) {
     case VAL_OBJ:
       return objectsEqual(a, b);
   }
+
+  return false;  // unreachable.
 }

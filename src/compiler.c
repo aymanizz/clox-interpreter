@@ -263,10 +263,18 @@ static void expressionStatement() {
   consume(TOKEN_SEMICOLON, "expected ';' after expression");
 }
 
+static void block() {
+  beginScope();
+  while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+    declaration();
+  }
+
+  consume(TOKEN_RIGHT_BRACE, "expected '}' after block");
+  endScope();
+}
+
 static void ifStatement() {
-  consume(TOKEN_LEFT_PAREN, "expected '(' after 'if'");
   expression();
-  consume(TOKEN_RIGHT_PAREN, "expected ')' after condition");
 
   int then_jump = emitJump(OP_JUMP_IF_FALSE);
   emitByte(OP_POP);
@@ -282,13 +290,12 @@ static void ifStatement() {
 static void whileStatement() {
   int start = currentChunk()->size;
 
-  consume(TOKEN_LEFT_PAREN, "expected a '(' after 'while'");
   expression();
-  consume(TOKEN_RIGHT_PAREN, "expected a ')' after condition");
 
   int jump = emitJump(OP_JUMP_IF_FALSE);
   emitByte(OP_POP);
-  statement();
+  consume(TOKEN_LEFT_BRACE, "expected a '{' after expression");
+  block();
   emitLoop(start);
   patchJump(jump);
   emitByte(OP_POP);
@@ -296,7 +303,6 @@ static void whileStatement() {
 
 static void forStatement() {
   beginScope();
-  consume(TOKEN_LEFT_PAREN, "expected a '(' after 'for'");
 
   if (match(TOKEN_VAR)) {
     varDeclaration();
@@ -316,34 +322,26 @@ static void forStatement() {
     emitByte(OP_POP);
   }
 
-  if (!match(TOKEN_RIGHT_PAREN)) {
+  if (!match(TOKEN_LEFT_BRACE)) {
     int jump = emitJump(OP_JUMP);
     int increment_start = currentChunk()->size;
 
     expression();
     emitByte(OP_POP);
-    consume(TOKEN_RIGHT_PAREN, "expected a ')' after clauses");
 
     emitLoop(start);
     start = increment_start;
     patchJump(jump);
   }
 
-  statement();
+  consume(TOKEN_LEFT_BRACE, "expected a '{' after clauses");
+  block();
   emitLoop(start);
   if (exit_jump != -1) {
     patchJump(exit_jump);
     emitByte(OP_POP);
   }
   endScope();
-}
-
-static void block() {
-  while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
-    declaration();
-  }
-
-  consume(TOKEN_RIGHT_BRACE, "expected '}' after block");
 }
 
 static void statement() {
@@ -354,9 +352,7 @@ static void statement() {
   } else if (match(TOKEN_FOR)) {
     forStatement();
   } else if (match(TOKEN_LEFT_BRACE)) {
-    beginScope();
     block();
-    endScope();
   } else {
     expressionStatement();
   }

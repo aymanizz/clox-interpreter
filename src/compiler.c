@@ -122,8 +122,7 @@ static void synchronize() {
       case TOKEN_CLASS:
       case TOKEN_FUN:
       case TOKEN_VAR:
-      case TOKEN_FOR:
-      case TOKEN_WHILE:
+      case TOKEN_LOOP:
       case TOKEN_IF:
       case TOKEN_RETURN:
         return;
@@ -287,42 +286,28 @@ static void ifStatement() {
   patchJump(else_jump);
 }
 
-static void whileStatement() {
+static void loopStatement() {
+  // loop_statement := loop (
+  //    <var declaration>? <condition expression>(';' <increment expression>)?
+  //  )? { <body> }
   int start = currentChunk()->size;
+  bool forever = check(TOKEN_LEFT_BRACE);
 
-  expression();
-
-  int jump = emitJump(OP_JUMP_IF_FALSE);
-  emitByte(OP_POP);
-  consume(TOKEN_LEFT_BRACE, "expected a '{' after expression");
-  block();
-  emitLoop(start);
-  patchJump(jump);
-  emitByte(OP_POP);
-}
-
-static void forStatement() {
-  beginScope();
-
-  if (match(TOKEN_VAR)) {
+  bool has_declaration = !forever && match(TOKEN_VAR);
+  if (has_declaration) {
+    beginScope();
     varDeclaration();
-  } else if (match(TOKEN_SEMICOLON)) {
-    // no initializer.
-  } else {
-    expressionStatement();
+    start = currentChunk()->size;
   }
 
-  int start = currentChunk()->size;
-
   int exit_jump = -1;
-  if (!match(TOKEN_SEMICOLON)) {
+  if (!forever) {
     expression();
-    consume(TOKEN_SEMICOLON, "expected a ';' after loop condition");
     exit_jump = emitJump(OP_JUMP_IF_FALSE);
     emitByte(OP_POP);
   }
 
-  if (!match(TOKEN_LEFT_BRACE)) {
+  if (!forever && match(TOKEN_SEMICOLON)) {
     int jump = emitJump(OP_JUMP);
     int increment_start = currentChunk()->size;
 
@@ -337,20 +322,20 @@ static void forStatement() {
   consume(TOKEN_LEFT_BRACE, "expected a '{' after clauses");
   block();
   emitLoop(start);
+
   if (exit_jump != -1) {
     patchJump(exit_jump);
     emitByte(OP_POP);
   }
-  endScope();
+
+  if (has_declaration) endScope();
 }
 
 static void statement() {
   if (match(TOKEN_IF)) {
     ifStatement();
-  } else if (match(TOKEN_WHILE)) {
-    whileStatement();
-  } else if (match(TOKEN_FOR)) {
-    forStatement();
+  } else if (match(TOKEN_LOOP)) {
+    loopStatement();
   } else if (match(TOKEN_LEFT_BRACE)) {
     block();
   } else {
@@ -604,8 +589,8 @@ ParseRule rules[] = {
     {NULL, NULL, PREC_NONE},          // TOKEN_ELSE
     {literal, NULL, PREC_NONE},       // TOKEN_FALSE
     {NULL, NULL, PREC_NONE},          // TOKEN_FUN
-    {NULL, NULL, PREC_NONE},          // TOKEN_FOR
     {NULL, NULL, PREC_NONE},          // TOKEN_IF
+    {NULL, NULL, PREC_NONE},          // TOKEN_LOOP
     {literal, NULL, PREC_NONE},       // TOKEN_NIL
     {NULL, or_, PREC_OR},             // TOKEN_OR
     {NULL, NULL, PREC_NONE},          // TOKEN_PRINT
@@ -614,7 +599,6 @@ ParseRule rules[] = {
     {NULL, NULL, PREC_NONE},          // TOKEN_THIS
     {literal, NULL, PREC_NONE},       // TOKEN_TRUE
     {NULL, NULL, PREC_NONE},          // TOKEN_VAR
-    {NULL, NULL, PREC_NONE},          // TOKEN_WHILE
     {NULL, NULL, PREC_NONE},          // TOKEN_ERROR
     {NULL, NULL, PREC_NONE},          // TOKEN_EOF
 };

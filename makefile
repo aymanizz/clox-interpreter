@@ -8,7 +8,7 @@
 # SOURCE_DIR   Directory where source files are found.
 # INCLUDE_DIR  Directory where header files are found.
 
-CFLAGS := -std=c99 -Wall -Wextra -Werror -Wno-unused-parameter
+CFLAGS := -std=c99 -Wall -Wextra -Wno-unused-parameter
 INCLUDE_DIR := include
 SOURCE_DIR := src
 BUILD_DIR := build
@@ -20,7 +20,7 @@ ifeq ($(MODE),debug)
 	CFLAGS += -O0 -DDEBUG -g
 	OBJ_DIR := $(BUILD_DIR)/debug
 else
-	CFLAGS += -O3 -flto
+	CFLAGS += -Werror -O3 -flto
 	OBJ_DIR := $(BUILD_DIR)/release
 endif
 

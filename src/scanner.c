@@ -100,20 +100,25 @@ static TokenType identifierType() {
     case 'e':
       return checkKeyword(1, 3, "lse", TOKEN_ELSE);
     case 'f': {
-      if (scanner.current - scanner.start > 1) {
-        switch (scanner.start[1]) {
-          case 'a':
-            return checkKeyword(2, 3, "lse", TOKEN_FALSE);
-          case 'u':
-            return checkKeyword(2, 1, "n", TOKEN_FUN);
-        }
+      if (scanner.current - scanner.start <= 1) break;
+      switch (scanner.start[1]) {
+        case 'a':
+          return checkKeyword(2, 3, "lse", TOKEN_FALSE);
+        case 'u':
+          return checkKeyword(2, 1, "n", TOKEN_FUN);
       }
-      break;
     }
     case 'i':
       return checkKeyword(1, 1, "f", TOKEN_IF);
-    case 'l':
-      return checkKeyword(1, 3, "oop", TOKEN_LOOP);
+    case 'l': {
+      if (scanner.current - scanner.start <= 1) break;
+      switch (scanner.start[1]) {
+        case 'o':
+          return checkKeyword(2, 2, "op", TOKEN_LOOP);
+        case 'e':
+          return checkKeyword(2, 1, "t", TOKEN_LET);
+      }
+    }
     case 'n':
       return checkKeyword(1, 2, "il", TOKEN_NIL);
     case 'o':
@@ -125,18 +130,14 @@ static TokenType identifierType() {
     case 's':
       return checkKeyword(1, 4, "uper", TOKEN_SUPER);
     case 't': {
-      if (scanner.current - scanner.start > 1) {
-        switch (scanner.start[1]) {
-          case 'h':
-            return checkKeyword(2, 2, "is", TOKEN_THIS);
-          case 'r':
-            return checkKeyword(2, 2, "ue", TOKEN_TRUE);
-        }
+      if (scanner.current - scanner.start <= 1) break;
+      switch (scanner.start[1]) {
+        case 'h':
+          return checkKeyword(2, 2, "is", TOKEN_THIS);
+        case 'r':
+          return checkKeyword(2, 2, "ue", TOKEN_TRUE);
       }
-      break;
     }
-    case 'v':
-      return checkKeyword(1, 2, "ar", TOKEN_VAR);
   }
 
   return TOKEN_IDENTIFIER;

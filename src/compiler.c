@@ -121,7 +121,7 @@ static void synchronize() {
     switch (parser.current.type) {
       case TOKEN_CLASS:
       case TOKEN_FUN:
-      case TOKEN_VAR:
+      case TOKEN_LET:
       case TOKEN_LOOP:
       case TOKEN_IF:
       case TOKEN_RETURN:
@@ -293,7 +293,7 @@ static void loopStatement() {
   int start = currentChunk()->size;
   bool forever = check(TOKEN_LEFT_BRACE);
 
-  bool has_declaration = !forever && match(TOKEN_VAR);
+  bool has_declaration = !forever && match(TOKEN_LET);
   if (has_declaration) {
     beginScope();
     varDeclaration();
@@ -412,7 +412,7 @@ static void varDeclaration() {
 }
 
 static void declaration() {
-  if (match(TOKEN_VAR)) {
+  if (match(TOKEN_LET)) {
     varDeclaration();
   } else {
     statement();
@@ -590,6 +590,7 @@ ParseRule rules[] = {
     {literal, NULL, PREC_NONE},       // TOKEN_FALSE
     {NULL, NULL, PREC_NONE},          // TOKEN_FUN
     {NULL, NULL, PREC_NONE},          // TOKEN_IF
+    {NULL, NULL, PREC_NONE},          // TOKEN_LET
     {NULL, NULL, PREC_NONE},          // TOKEN_LOOP
     {literal, NULL, PREC_NONE},       // TOKEN_NIL
     {NULL, or_, PREC_OR},             // TOKEN_OR
@@ -598,7 +599,6 @@ ParseRule rules[] = {
     {NULL, NULL, PREC_NONE},          // TOKEN_SUPER
     {NULL, NULL, PREC_NONE},          // TOKEN_THIS
     {literal, NULL, PREC_NONE},       // TOKEN_TRUE
-    {NULL, NULL, PREC_NONE},          // TOKEN_VAR
     {NULL, NULL, PREC_NONE},          // TOKEN_ERROR
     {NULL, NULL, PREC_NONE},          // TOKEN_EOF
 };

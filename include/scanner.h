@@ -37,6 +37,7 @@ typedef enum {
   TOKEN_FALSE,
   TOKEN_FUN,
   TOKEN_IF,
+  TOKEN_LET,
   TOKEN_LOOP,
   TOKEN_NIL,
   TOKEN_OR,
@@ -45,7 +46,6 @@ typedef enum {
   TOKEN_SUPER,
   TOKEN_THIS,
   TOKEN_TRUE,
-  TOKEN_VAR,
 
   TOKEN_ERROR,
   TOKEN_EOF

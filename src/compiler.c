@@ -126,10 +126,9 @@ static void synchronize() {
       case TOKEN_IF:
       case TOKEN_RETURN:
         return;
-      default:;  // pass.
+      default:
+        advance();
     }
-
-    advance();
   }
 }
 
@@ -274,16 +273,16 @@ static void block() {
 
 static void ifStatement() {
   expression();
-
   int then_jump = emitJump(OP_JUMP_IF_FALSE);
   emitByte(OP_POP);
   statement();
-  int else_jump = emitJump(OP_JUMP);
+  int else_jump = match(TOKEN_ELSE) ? emitJump(OP_JUMP) : -1;
   patchJump(then_jump);
   emitByte(OP_POP);
-  if (match(TOKEN_ELSE)) statement();
-
-  patchJump(else_jump);
+  if (else_jump != -1) {
+    statement();
+    patchJump(else_jump);
+  }
 }
 
 static void loopStatement() {

@@ -25,7 +25,8 @@ typedef enum {
   TYPE_SCRIPT,
 } FunctionType;
 
-typedef struct {
+typedef struct Compiler {
+  struct Compiler *enclosing;
   ObjFunction *function;
   FunctionType type;
 
@@ -61,6 +62,7 @@ Parser parser;
 Compiler *current = NULL;
 
 static void initCompiler(Compiler *c, FunctionType type) {
+  c->enclosing = current;
   c->function = newFunction();
   c->type = type;
   c->local_count = 0;
@@ -224,6 +226,7 @@ static ObjFunction *endCompiler() {
   }
 #endif
 
+  current = current->enclosing;
   return function;
 }
 
@@ -430,9 +433,52 @@ static void varDeclaration() {
   defineVariable(global);
 }
 
+static void function(FunctionType type) {
+  Compiler compiler;
+  initCompiler(&compiler, type);
+  current->function->name =
+      copyString(parser.previous.start, parser.previous.length);
+
+  consume(TOKEN_LEFT_PAREN, "expected '(' after function name");
+  beginScope();
+
+  while (!check(TOKEN_RIGHT_PAREN)) {
+    if (++current->function->arity >= 255) {
+      errorAtCurrent("cannot have more than 255 parameters");
+    }
+
+    uint8_t param_const = parseVariable("expected a parameter name");
+    defineVariable(param_const);
+    if (!match(TOKEN_COMMA)) break;
+  }
+
+  consume(TOKEN_RIGHT_PAREN, "expected ')' after parameters");
+  if (match(TOKEN_LEFT_BRACE)) {
+    block();
+  } else if (match(TOKEN_EQUAL)) {
+    expression();
+    consume(TOKEN_SEMICOLON, "expected ';' after expression");
+    emitByte(OP_RETURN);
+  } else {
+    errorAtCurrent("expected '=' or '{' after parameters list");
+  }
+
+  ObjFunction *f = endCompiler();
+  emitBytes(OP_CONSTANT, makeConstant(OBJ_VAL(f)));
+}
+
+static void funDeclaration() {
+  uint8_t global = parseVariable("expected function name");
+  markInitialized();
+  function(TYPE_FUNCTION);
+  defineVariable(global);
+}
+
 static void declaration() {
   if (match(TOKEN_LET)) {
     varDeclaration();
+  } else if (match(TOKEN_FUN)) {
+    funDeclaration();
   } else {
     statement();
   }

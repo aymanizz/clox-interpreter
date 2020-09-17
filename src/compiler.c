@@ -358,6 +358,20 @@ static void loopStatement() {
   if (has_declaration) endScope();
 }
 
+static void returnStatement() {
+  if (current->type == TYPE_SCRIPT) {
+    error("cannot return from outside a function");
+  }
+
+  if (match(TOKEN_SEMICOLON)) {
+    emitReturn();
+  } else {
+    expression();
+    consume(TOKEN_SEMICOLON, "expected ';' after expression");
+    emitByte(OP_RETURN);
+  }
+}
+
 static void statement() {
   if (match(TOKEN_IF)) {
     ifStatement();
@@ -365,6 +379,8 @@ static void statement() {
     loopStatement();
   } else if (match(TOKEN_LEFT_BRACE)) {
     block();
+  } else if (match(TOKEN_RETURN)) {
+    returnStatement();
   } else {
     expressionStatement();
   }

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "chunk.h"
 #include "memory.h"
 #include "object.h"
 #include "table.h"
@@ -73,10 +74,25 @@ ObjString *stringConcat(ObjString *a, ObjString *b) {
   return string;
 }
 
+ObjFunction *newFunction() {
+  ObjFunction *function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION);
+  function->arity = 0;
+  initChunk(&function->chunk);
+  function->name = NULL;
+  return function;
+}
+
+void printFunction(ObjFunction *function) {
+  printf("<fn %s>", function->name->chars);
+}
+
 void printObject(Value value) {
   switch (OBJ_TYPE(value)) {
     case OBJ_STRING:
       printf("%s", AS_CSTRING(value));
+      break;
+    case OBJ_FUNCTION:
+      printFunction(AS_FUNCTION(value));
       break;
   }
 }
@@ -90,7 +106,7 @@ bool objectsEqual(Value a, Value b) {
       // address are equal.
       return AS_OBJ(a) == AS_OBJ(b);
     }
+    default:
+      return false;
   }
-
-  return false;  // unreachable.
 }

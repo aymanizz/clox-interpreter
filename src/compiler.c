@@ -20,7 +20,15 @@ typedef struct {
   int depth;
 } Local;
 
+typedef enum {
+  TYPE_FUNCTION,
+  TYPE_SCRIPT,
+} FunctionType;
+
 typedef struct {
+  ObjFunction *function;
+  FunctionType type;
+
   Local locals[UINT8_COUNT];
   int local_count;
   int scope_depth;
@@ -52,10 +60,20 @@ typedef struct {
 Parser parser;
 Compiler *current = NULL;
 
-static void initCompiler(Compiler *c) {
+static void initCompiler(Compiler *c, FunctionType type) {
+  c->function = newFunction();
+  c->type = type;
   c->local_count = 0;
   c->scope_depth = 0;
   current = c;
+
+  // reserved for the current function object value being interpreted
+  Local *local = &current->locals[current->local_count++];
+  local->depth = 0;
+  local->name.type = TOKEN_IDENTIFIER;
+  local->name.start = "";
+  local->name.length = 0;
+  local->name.line = 0;
 }
 
 static void errorAt(Token *token, const char *message) {
@@ -132,9 +150,7 @@ static void synchronize() {
   }
 }
 
-Chunk *compiling_chunk;
-
-static Chunk *currentChunk() { return compiling_chunk; }
+static Chunk *currentChunk() { return &current->function->chunk; }
 
 static void emitByte(uint8_t byte) {
   writeChunk(currentChunk(), byte, parser.previous.line);
@@ -196,15 +212,19 @@ static void emitConstant(Value value) {
   emitBytes(OP_CONSTANT, makeConstant(value));
 }
 
-static void endCompiler() {
+static ObjFunction *endCompiler() {
   // TODO: remove when OP_RETURN is correctly implemented
   emitReturn();
+  ObjFunction *function = current->function;
 
 #ifdef CLOX_DEBUG_PRINT_CODE
   if (!parser.had_error) {
-    disassembleChunk(currentChunk(), "code");
+    disassembleChunk(currentChunk(),
+                     function->name != NULL ? function->name : "<script>");
   }
 #endif
+
+  return function;
 }
 
 static void beginScope() { ++current->scope_depth; }
@@ -604,11 +624,10 @@ ParseRule rules[] = {
 
 static ParseRule *getRule(TokenType type) { return &rules[type]; }
 
-bool compile(const char *source, Chunk *chunk) {
+ObjFunction *compile(const char *source) {
   initScanner(source);
   Compiler compiler;
-  initCompiler(&compiler);
-  compiling_chunk = chunk;
+  initCompiler(&compiler, TYPE_SCRIPT);
   parser.had_error = false;
   parser.panic_mode = false;
 
@@ -618,6 +637,6 @@ bool compile(const char *source, Chunk *chunk) {
     declaration();
   }
 
-  endCompiler();
-  return !parser.had_error;
+  ObjFunction *function = endCompiler();
+  return parser.had_error ? NULL : function;
 }

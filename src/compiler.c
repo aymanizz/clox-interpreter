@@ -198,7 +198,10 @@ static void emitLoop(int start) {
   emitByte(jump & 0xff);
 }
 
-static void emitReturn() { emitByte(OP_RETURN); }
+static void emitReturn() {
+  emitByte(OP_NIL);
+  emitByte(OP_RETURN);
+}
 
 static uint8_t makeConstant(Value value) {
   int constant = addConstant(currentChunk(), value);
@@ -215,14 +218,16 @@ static void emitConstant(Value value) {
 }
 
 static ObjFunction *endCompiler() {
-  // TODO: remove when OP_RETURN is correctly implemented
-  emitReturn();
+  Chunk *chunk = currentChunk();
+  if (chunk->code[chunk->size - 1] != OP_RETURN) emitReturn();
+
   ObjFunction *function = current->function;
 
 #ifdef CLOX_DEBUG_PRINT_CODE
   if (!parser.had_error) {
-    disassembleChunk(currentChunk(),
-                     function->name != NULL ? function->name : "<script>");
+    disassembleChunk(currentChunk(), function->name != NULL
+                                         ? function->name->chars
+                                         : "<script>");
   }
 #endif
 
@@ -625,9 +630,26 @@ static void grouping(bool can_assign) {
   consume(TOKEN_RIGHT_PAREN, "expected ')' after expression");
 }
 
+static uint8_t argumentList() {
+  uint8_t arg_count = 0;
+  while (!check(TOKEN_RIGHT_PAREN)) {
+    expression();
+    if (++arg_count >= 255) error("cannot have more than 255 arguments");
+    if (!match(TOKEN_COMMA)) break;
+  }
+
+  consume(TOKEN_RIGHT_PAREN, "expected ')' after argument list");
+  return arg_count;
+}
+
+static void call(bool can_assign) {
+  uint8_t arg_count = argumentList();
+  emitBytes(OP_CALL, arg_count);
+}
+
 // has to be in the same order as TokenType enum
 ParseRule rules[] = {
-    {grouping, NULL, PREC_CALL},      // TOKEN_LEFT_PAREN
+    {grouping, call, PREC_CALL},      // TOKEN_LEFT_PAREN
     {NULL, NULL, PREC_NONE},          // TOKEN_RIGHT_PAREN
     {NULL, NULL, PREC_NONE},          // TOKEN_LEFT_BRACE
     {NULL, NULL, PREC_NONE},          // TOKEN_RIGHT_BRACE

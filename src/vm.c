@@ -33,22 +33,59 @@ void freeVM() {
 static Value peek(int distance) { return vm.sp[-1 - distance]; }
 
 static void runtimeError(const char *format, ...) {
-  CallFrame *frame = &vm.frames[vm.frame_count - 1];
-  size_t instruction = frame->ip - frame->function->chunk.code;
-  int line = frame->function->chunk.lines[instruction];
-  fprintf(stderr, "error: line %d, in script: ", line);
+  for (int i = 0; i < vm.frame_count; ++i) {
+    CallFrame *frame = &vm.frames[i];
+    ObjFunction *function = frame->function;
+
+    uint8_t offset = frame->ip - function->chunk.code - 1;
+    fprintf(stderr, "line %d in ", function->chunk.lines[offset]);
+    fprintf(stderr, "%s\n",
+            function->name != NULL ? function->name->chars : "script");
+  }
 
   va_list args;
   va_start(args, format);
+  fputs("error: ", stderr);
   vfprintf(stderr, format, args);
-  fputs("\n", stderr);
   va_end(args);
+  fputs("\n", stderr);
 
   clearStack();
 }
 
 static bool isFalsy(Value value) {
   return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
+
+static bool call(ObjFunction *function, uint8_t arg_count) {
+  if (function->arity != arg_count) {
+    runtimeError("expected %i arguments, got %i", function->arity, arg_count);
+    return false;
+  } else if (vm.frame_count == CLOX_FRAMES_MAX) {
+    runtimeError("stack overflow");
+    return false;
+  }
+
+  CallFrame *frame = &vm.frames[vm.frame_count++];
+  frame->function = function;
+  frame->ip = frame->function->chunk.code;
+  frame->slots = vm.sp - arg_count - 1;
+  return true;
+}
+
+static bool callValue(Value value, uint8_t arg_count) {
+  if (IS_OBJ(value)) {
+    switch (AS_OBJ(value)->type) {
+      case OBJ_FUNCTION: {
+        return call(AS_FUNCTION(value), arg_count);
+      }
+      default:
+        break;
+    }
+  }
+
+  runtimeError("can only call callable values");
+  return false;
 }
 
 static InterpretResult run() {
@@ -198,12 +235,27 @@ static InterpretResult run() {
         frame->ip -= offset;
         break;
       }
+      case OP_CALL: {
+        uint8_t arg_count = READ_BYTE();
+        if (!callValue(peek(arg_count), arg_count))
+          return INTERPRET_RUNTIME_ERROR;
+
+        frame = &vm.frames[vm.frame_count - 1];
+        break;
+      }
       case OP_RETURN: {
-        while (vm.sp != vm.stack) {
-          printValue(pop());
-          printf("\n");
+        Value ret_value = pop();
+
+        --vm.frame_count;
+        if (vm.frame_count == 0) {
+          pop();
+          return INTERPRET_OK;
         }
-        return INTERPRET_OK;
+
+        vm.sp = frame->slots;
+        push(ret_value);
+        frame = &vm.frames[vm.frame_count - 1];
+        break;
       }
     }
   }
@@ -222,10 +274,7 @@ InterpretResult interpret(const char *source) {
   }
 
   push(OBJ_VAL(function));
-  CallFrame *frame = &vm.frames[vm.frame_count++];
-  frame->function = function;
-  frame->ip = function->chunk.code;
-  frame->slots = vm.stack;
+  call(function, 0);
 
   return run();
 }

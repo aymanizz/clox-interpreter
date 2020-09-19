@@ -303,12 +303,21 @@ static void ifStatement() {
   expression();
   int then_jump = emitJump(OP_JUMP_IF_FALSE);
   emitByte(OP_POP);
-  statement();
+
+  consume(TOKEN_LEFT_BRACE, "expected a block after condition");
+  block();
+
   int else_jump = match(TOKEN_ELSE) ? emitJump(OP_JUMP) : -1;
   patchJump(then_jump);
   emitByte(OP_POP);
+
   if (else_jump != -1) {
-    statement();
+    if (match(TOKEN_IF)) {
+      ifStatement();
+    } else {
+      consume(TOKEN_LEFT_BRACE, "expected a block after 'else'");
+      block();
+    }
     patchJump(else_jump);
   }
 }

@@ -1,6 +1,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "common.h"
 #include "compiler.h"
@@ -17,11 +18,14 @@ static void clearStack() {
   vm.frame_count = 0;
 }
 
+static void initNativeFunctions();
+
 void initVM() {
   clearStack();
   vm.objects = NULL;
   initTable(&vm.globals);
   initTable(&vm.strings);
+  initNativeFunctions();
 }
 
 void freeVM() {
@@ -276,6 +280,49 @@ static InterpretResult run() {
 #undef READ_CONSTANT
 #undef READ_STRING
 #undef BINARY_OP
+}
+
+static void defineNativeFn(const char *name, NativeFn fn) {
+  push(OBJ_VAL(copyString(name, strlen(name))));
+  push(OBJ_VAL(newNativeFn(fn)));
+  tableSet(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
+  pop();
+  pop();
+}
+
+static Value nativeClock(int arg_count, Value *args) {
+  return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
+}
+
+static Value nativePrintln(int arg_count, Value *args) {
+  for (int i = 0; i < arg_count; ++i) {
+    Value value = args[i];
+    switch (value.type) {
+      case VAL_BOOL:
+        printf("%s", AS_BOOL(value) ? "true" : "false");
+        break;
+      case VAL_NIL:
+        printf("nil");
+        break;
+      case VAL_NUMBER:
+        printf("%g", AS_NUMBER(value));
+        break;
+      case VAL_OBJ:
+        printObject(value);
+    }
+
+    if (i != arg_count - 1) {
+      putchar(' ');
+    }
+  }
+  putchar('\n');
+
+  return NIL_VAL;
+}
+
+static void initNativeFunctions() {
+  defineNativeFn("clock", nativeClock);
+  defineNativeFn("println", nativePrintln);
 }
 
 InterpretResult interpret(const char *source) {

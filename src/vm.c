@@ -73,11 +73,22 @@ static bool call(ObjFunction *function, uint8_t arg_count) {
   return true;
 }
 
-static bool callValue(Value value, uint8_t arg_count) {
-  if (IS_OBJ(value)) {
-    switch (AS_OBJ(value)->type) {
+static bool callNative(ObjNativeFn *nativeFn, uint8_t arg_count) {
+  Value *args = vm.sp - arg_count;
+  Value result = nativeFn->function(arg_count, args);
+  vm.sp = args - 1;
+  push(result);
+  return true;
+}
+
+static bool callValue(Value callee, uint8_t arg_count) {
+  if (IS_OBJ(callee)) {
+    switch (AS_OBJ(callee)->type) {
       case OBJ_FUNCTION: {
-        return call(AS_FUNCTION(value), arg_count);
+        return call(AS_FUNCTION(callee), arg_count);
+      }
+      case OBJ_NATIVE_FN: {
+        return callNative(AS_NATIVE_FN(callee), arg_count);
       }
       default:
         break;

@@ -82,6 +82,12 @@ ObjFunction *newFunction() {
   return function;
 }
 
+ObjNativeFn *newNativeFn(NativeFn function) {
+  ObjNativeFn *nativeFn = ALLOCATE_OBJ(ObjNativeFn, OBJ_NATIVE_FN);
+  nativeFn->function = function;
+  return nativeFn;
+}
+
 void printFunction(ObjFunction *function) {
   if (function->name == NULL) {
     printf("<script>");
@@ -98,6 +104,8 @@ void printObject(Value value) {
     case OBJ_FUNCTION:
       printFunction(AS_FUNCTION(value));
       break;
+    case OBJ_NATIVE_FN:
+      printf("<native fn>");
   }
 }
 

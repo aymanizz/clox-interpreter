@@ -86,6 +86,12 @@ ObjFunction *newFunction() {
 ObjClosure *newClosure(ObjFunction *function) {
   ObjClosure *closure = ALLOCATE_OBJ(ObjClosure, OBJ_CLOSURE);
   closure->function = function;
+  ObjUpvalue **upvalues = ALLOCATE(ObjUpvalue *, function->upvalue_count);
+  for (int i = 0; i < function->upvalue_count; ++i) {
+    upvalues[i] = NULL;
+  }
+  closure->upvalues = upvalues;
+  closure->upvalue_count = function->upvalue_count;
   return closure;
 }
 

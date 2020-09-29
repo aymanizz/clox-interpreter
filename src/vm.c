@@ -104,6 +104,8 @@ static bool callValue(Value callee, uint8_t arg_count) {
   return false;
 }
 
+static ObjUpvalue *captureUpvalue(Value *local) { return newUpvalue(local); }
+
 static InterpretResult run() {
   CallFrame *frame = &vm.frames[vm.frame_count - 1];
 
@@ -175,6 +177,17 @@ static InterpretResult run() {
         uint8_t slot = READ_BYTE();
         frame->slots[slot] = peek(0);
         break;
+      }
+      case OP_GET_UPVALUE: {
+        uint8_t index = READ_BYTE();
+        ObjUpvalue *upvalue = frame->closure->upvalues[index];
+        push(*upvalue->location);
+        break;
+      }
+      case OP_SET_UPVALUE: {
+        uint8_t index = READ_BYTE();
+        ObjUpvalue *upvalue = frame->closure->upvalues[index];
+        *upvalue->location = peek(0);
       }
       case OP_DEF_GLOBAL: {
         ObjString *name = READ_STRING();
@@ -264,6 +277,17 @@ static InterpretResult run() {
         ObjFunction *function = AS_FUNCTION(READ_CONSTANT());
         ObjClosure *closure = newClosure(function);
         push(OBJ_VAL(closure));
+        for (int i = 0; i < closure->upvalue_count; ++i) {
+          uint8_t is_local = READ_BYTE();
+          uint8_t index = READ_BYTE();
+          ObjUpvalue *upvalue;
+          if (is_local) {
+            upvalue = captureUpvalue(&frame->slots[index]);
+          } else {
+            upvalue = frame->closure->upvalues[index];
+          }
+          closure->upvalues[i] = upvalue;
+        }
         break;
       }
       case OP_RETURN: {

@@ -20,6 +20,11 @@ typedef struct {
   int depth;
 } Local;
 
+typedef struct {
+  uint8_t index;
+  bool is_local;
+} Upvalue;
+
 typedef enum {
   TYPE_FUNCTION,
   TYPE_SCRIPT,
@@ -30,6 +35,7 @@ typedef struct Compiler {
   ObjFunction *function;
   FunctionType type;
 
+  Upvalue upvalues[UINT8_COUNT];
   Local locals[UINT8_COUNT];
   int local_count;
   int scope_depth;
@@ -495,6 +501,11 @@ static void function(FunctionType type) {
 
   ObjFunction *f = endCompiler();
   emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(f)));
+
+  for (int i = 0; i < f->upvalue_count; ++i) {
+    emitByte(compiler.upvalues[i].is_local ? 1 : 0);
+    emitByte(compiler.upvalues[i].index);
+  }
 }
 
 static void funDeclaration() {
@@ -570,6 +581,41 @@ static int resolveLocal(Compiler *compiler, Token *name) {
   return -1;
 }
 
+static int addUpValue(Compiler *compiler, uint8_t index, bool is_local) {
+  int count = compiler->function->upvalue_count;
+  Upvalue *upvalues = compiler->upvalues;
+
+  for (int i = 0; i < count; ++i) {
+    Upvalue *upvalue = &upvalues[i];
+    if (upvalue->index == index && upvalue->is_local == is_local) return i;
+  }
+
+  if (count == UINT8_COUNT) {
+    error("too many closure variables in function");
+    return 0;
+  }
+
+  upvalues[count].index = index;
+  upvalues[count].is_local = is_local;
+  return compiler->function->upvalue_count++;
+}
+
+static int resolveUpValue(Compiler *compiler, Token *name) {
+  if (compiler->enclosing == NULL) return -1;
+
+  int local = resolveLocal(compiler->enclosing, name);
+  if (local != -1) {
+    return addUpValue(compiler, (uint8_t)local, true);
+  }
+
+  int upvalue = resolveUpValue(compiler->enclosing, name);
+  if (upvalue != -1) {
+    return addUpValue(compiler, (uint8_t)upvalue, false);
+  }
+
+  return -1;
+}
+
 static void variable(bool can_assign) {
   Token *name = &parser.previous;
   int arg = resolveLocal(current, name);
@@ -577,6 +623,9 @@ static void variable(bool can_assign) {
   if (arg != -1) {
     get_op = OP_GET_LOCAL;
     set_op = OP_SET_LOCAL;
+  } else if ((arg = resolveUpValue(current, name)) != -1) {
+    get_op = OP_GET_UPVALUE;
+    set_op = OP_SET_UPVALUE;
   } else {
     arg = identifierConstant(name);
     get_op = OP_GET_GLOBAL;

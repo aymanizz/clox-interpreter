@@ -76,8 +76,9 @@ ObjString *stringConcat(ObjString *a, ObjString *b) {
 
 ObjFunction *newFunction() {
   ObjFunction *function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION);
-  function->arity = 0;
   initChunk(&function->chunk);
+  function->arity = 0;
+  function->upvalue_count = 0;
   function->name = NULL;
   return function;
 }

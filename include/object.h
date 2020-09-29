@@ -29,6 +29,7 @@ typedef struct {
   int arity;
   Chunk chunk;
   ObjString *name;
+  uint8_t upvalue_count;
 } ObjFunction;
 
 typedef struct {

@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "debug.h"
+#include "object.h"
 #include "value.h"
 
 static int simpleOp(const char *name, int offset);
@@ -45,6 +46,10 @@ int disassembleOp(Chunk *chunk, int offset) {
       return byteOp("OP_GET_LOCAL", chunk, offset);
     case OP_SET_LOCAL:
       return byteOp("OP_SET_LOCAL", chunk, offset);
+    case OP_GET_UPVALUE:
+      return byteOp("OP_GET_UPVALUE", chunk, offset);
+    case OP_SET_UPVALUE:
+      return byteOp("OP_SET_UPVALUE", chunk, offset);
     case OP_DEF_GLOBAL:
       return constantOp("OP_DEF_GLOBAL", chunk, offset);
     case OP_GET_GLOBAL:
@@ -79,8 +84,21 @@ int disassembleOp(Chunk *chunk, int offset) {
       return jumpOp("OP_LOOP", BACKWARD, chunk, offset);
     case OP_CALL:
       return byteOp("OP_CALL", chunk, offset);
-    case OP_CLOSURE:
-      return constantOp("OP_CLOSURE", chunk, offset);
+    case OP_CLOSURE: {
+      offset = constantOp("OP_CLOSURE", chunk, offset);
+
+      uint8_t constant = chunk->code[offset - 1];
+      ObjFunction *function = AS_FUNCTION(chunk->constants.values[constant]);
+
+      for (int i = 0; i < function->upvalue_count; ++i) {
+        int is_local = chunk->code[offset++];
+        int index = chunk->code[offset++];
+        printf("        %04d |%-20s %s %d\n", offset - 2, " ",
+               is_local ? "local" : "upvalue", index);
+      }
+
+      return offset;
+    }
   }
 
   printf("Unkown opcode %d\n", op);
@@ -95,7 +113,7 @@ static int byteOp(const char *name, Chunk *chunk, int offset) {
 
 static int constantOp(const char *name, Chunk *chunk, int offset) {
   uint8_t constant = chunk->code[offset + 1];
-  printf("%s %4d (", name, constant);
+  printf("%-16s %4d (", name, constant);
   printValue(chunk->constants.values[constant]);
   printf(")\n");
   return offset + 2;

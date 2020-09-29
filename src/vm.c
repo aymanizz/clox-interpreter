@@ -15,6 +15,7 @@ VM vm;
 
 static void clearStack() {
   vm.sp = vm.stack;
+  vm.open_upvalues = NULL;
   vm.frame_count = 0;
 }
 
@@ -104,7 +105,37 @@ static bool callValue(Value callee, uint8_t arg_count) {
   return false;
 }
 
-static ObjUpvalue *captureUpvalue(Value *local) { return newUpvalue(local); }
+static ObjUpvalue *captureUpvalue(Value *local) {
+  ObjUpvalue *prev = NULL;
+  ObjUpvalue *upvalue = vm.open_upvalues;
+
+  while (upvalue != NULL && upvalue->location > local) {
+    prev = upvalue;
+    upvalue = upvalue->next;
+  }
+
+  if (upvalue != NULL && upvalue->location == local) return upvalue;
+
+  ObjUpvalue *captured = newUpvalue(local);
+
+  captured->next = upvalue;
+  if (prev != NULL) {
+    prev->next = captured;
+  } else {
+    vm.open_upvalues = captured;
+  }
+
+  return captured;
+}
+
+static void closeUpvalue(Value *last) {
+  while (vm.open_upvalues != NULL && vm.open_upvalues->location >= last) {
+    ObjUpvalue *upvalue = vm.open_upvalues;
+    upvalue->closed = *upvalue->location;
+    upvalue->location = &upvalue->closed;
+    vm.open_upvalues = upvalue->next;
+  }
+}
 
 static InterpretResult run() {
   CallFrame *frame = &vm.frames[vm.frame_count - 1];
@@ -188,6 +219,7 @@ static InterpretResult run() {
         uint8_t index = READ_BYTE();
         ObjUpvalue *upvalue = frame->closure->upvalues[index];
         *upvalue->location = peek(0);
+        break;
       }
       case OP_DEF_GLOBAL: {
         ObjString *name = READ_STRING();
@@ -273,6 +305,11 @@ static InterpretResult run() {
         frame = &vm.frames[vm.frame_count - 1];
         break;
       }
+      case OP_CLOSE_UPVALUE: {
+        closeUpvalue(vm.sp - 1);
+        pop();
+        break;
+      }
       case OP_CLOSURE: {
         ObjFunction *function = AS_FUNCTION(READ_CONSTANT());
         ObjClosure *closure = newClosure(function);
@@ -292,6 +329,7 @@ static InterpretResult run() {
       }
       case OP_RETURN: {
         Value ret_value = pop();
+        closeUpvalue(frame->slots);
 
         --vm.frame_count;
         if (vm.frame_count == 0) {

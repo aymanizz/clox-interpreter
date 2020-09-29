@@ -95,6 +95,12 @@ ObjNativeFn *newNativeFn(NativeFn function) {
   return nativeFn;
 }
 
+ObjUpvalue *newUpvalue(Value *slot) {
+  ObjUpvalue *upvalue = ALLOCATE_OBJ(ObjUpvalue, OBJ_UPVALUE);
+  upvalue->location = slot;
+  return upvalue;
+}
+
 void printFunction(ObjFunction *function) {
   if (function->name == NULL) {
     printf("<script>");
@@ -116,6 +122,8 @@ void printObject(Value value) {
       break;
     case OBJ_NATIVE_FN:
       printf("<native fn>");
+    case OBJ_UPVALUE:
+      printf("upvalue");
   }
 }
 

@@ -34,6 +34,10 @@ static void freeObject(Obj *object) {
       FREE(object, ObjNativeFn);
       break;
     }
+    case OBJ_UPVALUE: {
+      FREE(object, ObjUpvalue);
+      break;
+    }
   }
 }
 

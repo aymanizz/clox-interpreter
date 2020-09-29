@@ -10,6 +10,7 @@ typedef enum {
   OBJ_FUNCTION,
   OBJ_CLOSURE,
   OBJ_NATIVE_FN,
+  OBJ_UPVALUE,
 } ObjType;
 
 typedef struct Obj {
@@ -31,6 +32,11 @@ typedef struct {
   ObjString *name;
   uint8_t upvalue_count;
 } ObjFunction;
+
+typedef struct {
+  Obj obj;
+  Value *location;
+} ObjUpvalue;
 
 typedef struct {
   Obj obj;
@@ -65,6 +71,8 @@ ObjString *stringConcat(ObjString *a, ObjString *b);
 ObjFunction *newFunction();
 ObjClosure *newClosure(ObjFunction *function);
 ObjNativeFn *newNativeFn(NativeFn function);
+
+ObjUpvalue *newUpvalue(Value *slot);
 
 void printObject(Value value);
 bool objectsEqual(Value a, Value b);

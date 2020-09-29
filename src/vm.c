@@ -39,7 +39,7 @@ static Value peek(int distance) { return vm.sp[-1 - distance]; }
 static void runtimeError(const char *format, ...) {
   for (int i = 0; i < vm.frame_count; ++i) {
     CallFrame *frame = &vm.frames[i];
-    ObjFunction *function = frame->function;
+    ObjFunction *function = frame->closure->function;
 
     uint8_t offset = frame->ip - function->chunk.code - 1;
     fprintf(stderr, "line %d in ", function->chunk.lines[offset]);
@@ -61,7 +61,8 @@ static bool isFalsy(Value value) {
   return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
 
-static bool call(ObjFunction *function, uint8_t arg_count) {
+static bool call(ObjClosure *closure, uint8_t arg_count) {
+  ObjFunction *function = closure->function;
   if (function->arity != arg_count) {
     runtimeError("expected %i arguments, got %i", function->arity, arg_count);
     return false;
@@ -71,8 +72,8 @@ static bool call(ObjFunction *function, uint8_t arg_count) {
   }
 
   CallFrame *frame = &vm.frames[vm.frame_count++];
-  frame->function = function;
-  frame->ip = frame->function->chunk.code;
+  frame->closure = closure;
+  frame->ip = function->chunk.code;
   frame->slots = vm.sp - arg_count - 1;
   return true;
 }
@@ -88,8 +89,8 @@ static bool callNative(ObjNativeFn *nativeFn, uint8_t arg_count) {
 static bool callValue(Value callee, uint8_t arg_count) {
   if (IS_OBJ(callee)) {
     switch (AS_OBJ(callee)->type) {
-      case OBJ_FUNCTION: {
-        return call(AS_FUNCTION(callee), arg_count);
+      case OBJ_CLOSURE: {
+        return call(AS_CLOSURE(callee), arg_count);
       }
       case OBJ_NATIVE_FN: {
         return callNative(AS_NATIVE_FN(callee), arg_count);
@@ -109,7 +110,8 @@ static InterpretResult run() {
 #define READ_BYTE() (*frame->ip++)
 #define READ_SHORT() \
   ((uint16_t)(frame->ip += 2, (frame->ip[-2] << 8) | frame->ip[-1]))
-#define READ_CONSTANT() (frame->function->chunk.constants.values[READ_BYTE()])
+#define READ_CONSTANT() \
+  (frame->closure->function->chunk.constants.values[READ_BYTE()])
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(value_type, op)                     \
   do {                                                \
@@ -134,8 +136,8 @@ static InterpretResult run() {
       }
       printf("\n");
     }
-    disassembleOp(&frame->function->chunk,
-                  (int)(frame->ip - frame->function->chunk.code));
+    disassembleOp(&frame->closure->function->chunk,
+                  (int)(frame->ip - frame->closure->function->chunk.code));
 #endif
 
     OpCode op = READ_BYTE();
@@ -258,6 +260,12 @@ static InterpretResult run() {
         frame = &vm.frames[vm.frame_count - 1];
         break;
       }
+      case OP_CLOSURE: {
+        ObjFunction *function = AS_FUNCTION(READ_CONSTANT());
+        ObjClosure *closure = newClosure(function);
+        push(OBJ_VAL(closure));
+        break;
+      }
       case OP_RETURN: {
         Value ret_value = pop();
 
@@ -332,7 +340,10 @@ InterpretResult interpret(const char *source) {
   }
 
   push(OBJ_VAL(function));
-  call(function, 0);
+  ObjClosure *closure = newClosure(function);
+  pop();
+  push(OBJ_VAL(closure));
+  call(closure, 0);
 
   return run();
 }

@@ -79,6 +79,8 @@ int disassembleOp(Chunk *chunk, int offset) {
       return jumpOp("OP_LOOP", BACKWARD, chunk, offset);
     case OP_CALL:
       return byteOp("OP_CALL", chunk, offset);
+    case OP_CLOSURE:
+      return constantOp("OP_CLOSURE", chunk, offset);
   }
 
   printf("Unkown opcode %d\n", op);

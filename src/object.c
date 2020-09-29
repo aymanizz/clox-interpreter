@@ -82,6 +82,12 @@ ObjFunction *newFunction() {
   return function;
 }
 
+ObjClosure *newClosure(ObjFunction *function) {
+  ObjClosure *closure = ALLOCATE_OBJ(ObjClosure, OBJ_CLOSURE);
+  closure->function = function;
+  return closure;
+}
+
 ObjNativeFn *newNativeFn(NativeFn function) {
   ObjNativeFn *nativeFn = ALLOCATE_OBJ(ObjNativeFn, OBJ_NATIVE_FN);
   nativeFn->function = function;
@@ -103,6 +109,9 @@ void printObject(Value value) {
       break;
     case OBJ_FUNCTION:
       printFunction(AS_FUNCTION(value));
+      break;
+    case OBJ_CLOSURE:
+      printFunction(AS_CLOSURE(value)->function);
       break;
     case OBJ_NATIVE_FN:
       printf("<native fn>");

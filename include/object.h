@@ -8,6 +8,7 @@
 typedef enum {
   OBJ_STRING,
   OBJ_FUNCTION,
+  OBJ_CLOSURE,
   OBJ_NATIVE_FN,
 } ObjType;
 
@@ -30,6 +31,11 @@ typedef struct {
   ObjString *name;
 } ObjFunction;
 
+typedef struct {
+  Obj obj;
+  ObjFunction *function;
+} ObjClosure;
+
 typedef Value (*NativeFn)(int args_count, Value *args);
 
 typedef struct {
@@ -41,11 +47,13 @@ typedef struct {
 
 #define IS_STRING(value) isObjType(value, OBJ_STRING)
 #define IS_FUNCTION(value) isObjType(value, OBJ_FUNCTION)
+#define IS_CLOSURE(value) isObjType(value, OBJ_CLOSURE)
 #define IS_NATIVE_FN(value) isObjType(value, OBJ_NATIVE_FN)
 
 #define AS_STRING(value) ((ObjString *)AS_OBJ(value))
 #define AS_CSTRING(value) (((ObjString *)AS_OBJ(value))->chars)
 #define AS_FUNCTION(value) ((ObjFunction *)AS_OBJ(value))
+#define AS_CLOSURE(value) ((ObjClosure *)AS_OBJ(value))
 #define AS_NATIVE_FN(value) ((ObjNativeFn *)AS_OBJ(value))
 
 ObjString *newString(const int length);
@@ -54,6 +62,7 @@ uint32_t hashString(const char *key, const int length);
 ObjString *stringConcat(ObjString *a, ObjString *b);
 
 ObjFunction *newFunction();
+ObjClosure *newClosure(ObjFunction *function);
 ObjNativeFn *newNativeFn(NativeFn function);
 
 void printObject(Value value);

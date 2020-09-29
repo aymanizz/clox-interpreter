@@ -33,9 +33,11 @@ typedef struct {
   uint8_t upvalue_count;
 } ObjFunction;
 
-typedef struct {
+typedef struct ObjUpValue {
   Obj obj;
   Value *location;
+  Value closed;
+  struct ObjUpValue *next;
 } ObjUpvalue;
 
 typedef struct {

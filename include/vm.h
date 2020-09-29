@@ -10,7 +10,7 @@
 #define CLOX_VM_STACK_MAX (CLOX_FRAMES_MAX * UINT8_COUNT)
 
 typedef struct {
-  ObjFunction *function;
+  ObjClosure *closure;
   uint8_t *ip;
   Value *slots;
 } CallFrame;

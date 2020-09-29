@@ -41,6 +41,8 @@ typedef struct {
 typedef struct {
   Obj obj;
   ObjFunction *function;
+  ObjUpvalue **upvalues;
+  int upvalue_count;
 } ObjClosure;
 
 typedef Value (*NativeFn)(int args_count, Value *args);
